@@ -331,6 +331,7 @@
             <p>Table of Contents</p>
             <ul>
                 <li><a href="#overview">Overview</a></li>
+                <li><a href="#aop-internals">How @Retryable Uses AOP</a></li>
                 <li><a href="#benefits">Benefits</a></li>
                 <li><a href="#pitfalls">Pitfalls & Dangers</a></li>
                 <li><a href="#cost">Cost of Usage</a></li>
@@ -352,6 +353,265 @@
 public String callExternalApi() {
     // This method will be retried up to 3 times with exponential backoff
 }</code></pre>
+
+        <h2 id="aop-internals">How @Retryable Uses AOP (Advanced)</h2>
+
+        <h3>Understanding the Magic Behind @Retryable</h3>
+        <p><code>@Retryable</code> uses <strong>Aspect-Oriented Programming (AOP)</strong> to intercept method calls and wrap them with retry logic. Let's break down how it works:</p>
+
+        <h3>Step-by-Step Execution Flow</h3>
+        <table>
+            <tr>
+                <th>Step</th>
+                <th>What Happens</th>
+                <th>Who Does It</th>
+            </tr>
+            <tr>
+                <td>1. Bean Creation</td>
+                <td>Spring detects @Retryable annotation during bean initialization</td>
+                <td>Spring's BeanPostProcessor</td>
+            </tr>
+            <tr>
+                <td>2. Proxy Creation</td>
+                <td>Spring wraps the bean with a CGLIB proxy that intercepts method calls</td>
+                <td>Spring AOP Engine</td>
+            </tr>
+            <tr>
+                <td>3. Method Call</td>
+                <td>When you call the method, the proxy intercepts it (not the original)</td>
+                <td>CGLIB Proxy</td>
+            </tr>
+            <tr>
+                <td>4. Aspect Logic</td>
+                <td>Aspect applies retry logic: try → catch → wait → retry</td>
+                <td>RetryTemplate Aspect</td>
+            </tr>
+            <tr>
+                <td>5. Exception Handling</td>
+                <td>If max retries exceeded, exception propagates to caller</td>
+                <td>Aspect / Original Exception</td>
+            </tr>
+        </table>
+
+        <h3>Visual Diagram: How AOP Wraps Your Method</h3>
+        <pre><code>WITHOUT AOP (What you wrote):
+┌─────────────────────┐
+│ myMethod()          │
+│ {                   │
+│   // Your code      │
+│ }                   │
+└─────────────────────┘
+
+WITH AOP PROXY (What actually executes):
+┌────────────────────────────────────────────┐
+│ CGLIB Proxy                                │
+│ ┌──────────────────────────────────────┐  │
+│ │ RetryAspect (Added by Spring)        │  │
+│ │ ┌──────────────────────────────────┐ │  │
+│ │ │ for (int attempt = 0; ...)       │ │  │
+│ │ │   try {                          │ │  │
+│ │ │     return myMethod() // ACTUAL  │ │  │
+│ │ │   } catch (Exception e) {        │ │  │
+│ │ │     if (shouldRetry) {           │ │  │
+│ │ │       sleep(backoff)             │ │  │
+│ │ │       continue // retry          │ │  │
+│ │ │     } else throw                 │ │  │
+│ │ │   }                              │ │  │
+│ │ └──────────────────────────────────┘ │  │
+│ └──────────────────────────────────────┘  │
+└────────────────────────────────────────────┘</code></pre>
+
+        <h3>Example 1: What AOP Actually Does Under the Hood</h3>
+        <pre><code>// YOUR CODE (what you write):
+@Service
+public class PaymentService {
+    @Retryable(
+        value = {SocketTimeoutException.class},
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 1000)
+    )
+    public PaymentResult processPayment(Order order) {
+        logger.info("Processing payment for order {}", order.getId());
+        return paymentGateway.charge(order);  // External API call
+    }
+}
+
+// WHAT SPRING CREATES (AOP Magic):
+@Service
+public class PaymentServiceProxy extends PaymentService {  // PROXY CLASS
+    private PaymentService target = new PaymentService();
+
+    @Override
+    public PaymentResult processPayment(Order order) {
+        RetryTemplate retryTemplate = new RetryTemplate();
+        retryTemplate.setMaxAttempts(3);
+        retryTemplate.setBackOffPolicy(new FixedBackOffPolicy(1000));
+
+        return retryTemplate.execute(context -> {
+            try {
+                logger.info("Attempt {} of {}",
+                    context.getRetryCount() + 1, 3);
+                return target.processPayment(order);  // Call actual method
+            } catch (SocketTimeoutException e) {
+                if (context.getRetryCount() < 2) {  // 0-indexed
+                    logger.warn("Timeout occurred, will retry");
+                    throw e;  // Trigger retry
+                } else {
+                    logger.error("Max retries exceeded");
+                    throw e;  // Give up
+                }
+            }
+        });
+    }
+}</code></pre>
+
+        <h3>Example 2: Seeing the AOP Proxy in Action</h3>
+        <pre><code>@SpringBootApplication
+@EnableRetry  // IMPORTANT: Enables AOP for @Retryable
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+
+@Component
+public class DebugAopExample {
+    @Autowired
+    private PaymentService paymentService;
+
+    public void demonstrateAop() {
+        // Check if this is actually a proxy
+        System.out.println("Class: " + paymentService.getClass().getName());
+        // Output: Class: com.example.PaymentService$$EnhancerBySpringCGLIB$$12345
+        //         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        //         Notice the $$EnhancerBySpringCGLIB - this is the proxy!
+
+        System.out.println("Is Proxy: " +
+            paymentService.getClass().getName().contains("EnhancerBySpringCGLIB"));
+        // Output: true
+
+        // The proxy intercepts all method calls
+        paymentService.processPayment(order);  // Goes through proxy first!
+    }
+}</code></pre>
+
+        <h3>Example 3: Execution Timeline with Logging</h3>
+        <pre><code>// This is what happens when you call a @Retryable method:
+
+paymentService.processPayment(order);
+    ↓
+[AOP Proxy Intercepts]
+    ↓
+[RetryTemplate starts loop: attempt 1]
+    ↓
+Logger: "Processing payment for order 123"
+    ↓
+paymentGateway.charge(order)  // ACTUAL METHOD CALL
+    ↓
+[SocketTimeoutException thrown!]
+    ↓
+[AOP Catches exception]
+    ↓
+Logger: "Timeout occurred, will retry"
+    ↓
+[Sleep 1000ms - backoff delay]
+    ↓
+[RetryTemplate attempts retry: attempt 2]
+    ↓
+Logger: "Processing payment for order 123"
+    ↓
+paymentGateway.charge(order)  // RETRY CALL
+    ↓
+[Success! Returns PaymentResult]
+    ↓
+[AOP stops looping, returns result to caller]</code></pre>
+
+        <h3>Example 4: AOP + @Recover (Error Recovery)</h3>
+        <pre><code>@Service
+public class PaymentService {
+    @Retryable(
+        value = {SocketTimeoutException.class},
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 1000)
+    )
+    public PaymentResult processPayment(Order order) {
+        return paymentGateway.charge(order);
+    }
+
+    // AOP automatically calls this if all retries fail
+    @Recover
+    public PaymentResult recoverPayment(
+        SocketTimeoutException ex,
+        Order order) {
+        // This is called by AOP when max retries exceeded
+        logger.error("All retries failed. Queuing for async retry", ex);
+        asyncQueue.add(order);
+        return PaymentResult.QUEUED;  // Return degraded response
+    }
+}
+
+// WHAT HAPPENS INTERNALLY:
+// If processPayment() fails 3 times:
+//   1. AOP catches final exception
+//   2. AOP finds @Recover method
+//   3. AOP calls recoverPayment() automatically
+//   4. Returns: PaymentResult.QUEUED instead of throwing</code></pre>
+
+        <h3>Important: Why @EnableRetry is Required</h3>
+        <pre><code>// WITHOUT @EnableRetry:
+@SpringBootApplication
+public class Application {
+    // @Retryable annotations are IGNORED
+    // No proxy is created, no retries happen
+}
+
+// WITH @EnableRetry:
+@SpringBootApplication
+@EnableRetry  // ← This tells Spring to create AOP proxies for @Retryable
+public class Application {
+    // @Retryable annotations work!
+    // Proxies are created, retries work
+}
+
+// What @EnableRetry does:
+// 1. Scans for @Retryable annotations
+// 2. Creates CGLIB proxies for those methods
+// 3. Registers RetryTemplate and retry advice (the aspect)
+// 4. Enables method interception</code></pre>
+
+        <h3>Key AOP Concepts You Should Know</h3>
+        <table>
+            <tr>
+                <th>Concept</th>
+                <th>What It Does</th>
+                <th>In @Retryable</th>
+            </tr>
+            <tr>
+                <td><strong>Joinpoint</strong></td>
+                <td>The point in code where aspect can be applied</td>
+                <td>Your @Retryable method</td>
+            </tr>
+            <tr>
+                <td><strong>Pointcut</strong></td>
+                <td>Selects which joinpoints to apply aspect to</td>
+                <td>@Retryable annotation</td>
+            </tr>
+            <tr>
+                <td><strong>Aspect</strong></td>
+                <td>The logic that gets applied (the "before/after" code)</td>
+                <td>RetryTemplate + retry loop</td>
+            </tr>
+            <tr>
+                <td><strong>Proxy</strong></td>
+                <td>The wrapper object that intercepts calls</td>
+                <td>PaymentService$$EnhancerBySpringCGLIB</td>
+            </tr>
+            <tr>
+                <td><strong>Advice</strong></td>
+                <td>The actual code that runs (around, before, after)</td>
+                <td>The try-catch-retry loop</td>
+            </tr>
+        </table>
 
         <h2 id="benefits">Benefits</h2>
 
