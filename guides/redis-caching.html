@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redis Caching - In-Memory Data Store Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+            --code-bg: #f6f8fa;
+            --success: #1a7f37;
+            --warning: #9e6a03;
+            --danger: #da3633;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; background-color: var(--bg-canvas); color: var(--text-primary); line-height: 1.6; display: flex; }
+        .sidebar { width: 260px; background-color: var(--bg-subtle); border-right: 1px solid var(--border); padding: 24px; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; gap: 8px; align-items: center; margin-bottom: 32px; }
+        .sidebar-nav { list-style: none; }
+        .sidebar-nav li { margin-bottom: 12px; }
+        .sidebar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; padding: 8px 12px; display: block; border-radius: 6px; transition: all 0.2s; }
+        .sidebar-nav a:hover { background-color: var(--bg-canvas); color: var(--primary); }
+        .sidebar-nav a.active { background-color: var(--bg-canvas); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); padding-left: 9px; }
+        main { margin-left: 260px; flex: 1; padding: 48px; max-width: 900px; }
+        header { border-bottom: 1px solid var(--border); padding: 24px 0; margin-bottom: 48px; }
+        h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        .subtitle { font-size: 16px; color: var(--text-secondary); }
+        h2 { font-size: 24px; font-weight: 700; margin-top: 40px; margin-bottom: 20px; color: var(--text-primary); padding-top: 16px; border-top: 1px solid var(--border); }
+        h2:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+        h3 { font-size: 18px; font-weight: 600; margin-top: 24px; margin-bottom: 12px; }
+        p { margin-bottom: 16px; color: var(--text-secondary); line-height: 1.8; }
+        ul, ol { margin-left: 24px; margin-bottom: 16px; }
+        li { margin-bottom: 10px; color: var(--text-secondary); }
+        strong { color: var(--text-primary); font-weight: 600; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; color: #d73a49; }
+        pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 20px 0; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: var(--text-primary); }
+        .box { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 24px 0; background: var(--bg-subtle); }
+        .box.success { border-color: var(--success); background: #dafbe1; }
+        .box.warning { border-color: var(--warning); background: #fff8c5; }
+        .box.danger { border-color: var(--danger); background: #ffebe9; }
+        .box strong { display: block; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 24px 0; border: 1px solid var(--border); font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        footer { border-top: 1px solid var(--border); margin-top: 64px; padding-top: 32px; font-size: 14px; color: var(--text-secondary); }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .summary-box { background: var(--bg-subtle); border-left: 4px solid var(--primary); border-radius: 4px; padding: 20px; margin: 24px 0; }
+        @media (max-width: 768px) { body { flex-direction: column; } .sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); } main { margin-left: 0; padding: 24px 16px; } h1 { font-size: 28px; } h2 { font-size: 20px; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/guides/">All Guides</a></li>
+                <li><a href="redis-caching.html" class="active">Redis</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>⚡ Redis Caching</h1>
+            <p class="subtitle">High-performance in-memory data store for caching, sessions, and real-time analytics</p>
+        </header>
+
+        <div class="summary-box">
+            <h3>📋 Executive Summary</h3>
+            <p><strong>What:</strong> Redis is an in-memory data structure store used for caching, session management, real-time analytics, and pub/sub messaging.</p>
+            <p><strong>Performance:</strong> Sub-millisecond latency. Can handle 100K+ operations per second on a single instance.</p>
+            <p><strong>When to use:</strong> Need fast reads, caching database queries, session storage, leaderboards, real-time counters</p>
+            <p><strong>Common use cases:</strong> Cache layer, session store, rate limiting, job queues, real-time analytics</p>
+            <p><strong>Data loss risk:</strong> In-memory only (unless persistence enabled). Data lost on restart unless saved to disk.</p>
+        </div>
+
+        <h2>Overview & Core Concepts</h2>
+        <p>Redis stores data in-memory with optional persistence to disk. It's much faster than databases (network + disk I/O) but has less data (only what fits in RAM).</p>
+
+        <h3>Why Redis is Fast</h3>
+        <table>
+            <tr>
+                <th>Operation</th>
+                <th>PostgreSQL</th>
+                <th>Redis</th>
+                <th>Speed Gain</th>
+            </tr>
+            <tr>
+                <td>Get user by ID</td>
+                <td>5-10ms</td>
+                <td>0.1-0.5ms</td>
+                <td>50-100x faster</td>
+            </tr>
+            <tr>
+                <td>Cache miss + DB hit</td>
+                <td>10-15ms</td>
+                <td>10-15ms</td>
+                <td>Same (with miss)</td>
+            </tr>
+            <tr>
+                <td>100K operations</td>
+                <td>1-2 seconds</td>
+                <td>100-200ms</td>
+                <td>10-15x faster</td>
+            </tr>
+        </table>
+
+        <h2>How Junior Developers Use Redis</h2>
+
+        <h3>Install & Run Locally</h3>
+        <pre><code># Using Docker
+docker run -d -p 6379:6379 redis:latest
+
+# Or using Homebrew (macOS)
+brew install redis
+redis-server</code></pre>
+
+        <h3>Basic Cache Operations</h3>
+        <pre><code>// Java with Jedis
+import redis.clients.jedis.Jedis;
+
+Jedis redis = new Jedis("localhost", 6379);
+
+// Set a value (string)
+redis.set("user:123:name", "John Doe");
+redis.expire("user:123:name", 3600);  // 1 hour expiry
+
+// Get a value
+String name = redis.get("user:123:name");  // "John Doe"
+
+// Delete
+redis.del("user:123:name");
+
+// Key expiration is CRITICAL for cache
+redis.setex("session:abc", 1800, "session_data");  // Expires in 30 min</code></pre>
+
+        <h3>Common Caching Pattern</h3>
+        <pre><code>// Cache-Aside Pattern (most common)
+public User getUser(Long userId) {
+    // Check cache first
+    String cached = redis.get("user:" + userId);
+    if (cached != null) {
+        return deserialize(cached);  // Fast path
+    }
+
+    // Cache miss - hit database
+    User user = database.findById(userId);
+
+    // Store in cache for next time
+    redis.setex("user:" + userId, 3600, serialize(user));
+
+    return user;
+}</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Beginner Mistakes</strong>
+            <ul>
+                <li>🚨 Forgetting to set expiration (cache grows forever, OOM)</li>
+                <li>🚨 Caching user passwords (security risk)</li>
+                <li>🚨 Complex nested objects without serialization</li>
+                <li>🚨 No error handling for Redis failures</li>
+                <li>🚨 Assuming Redis is persistent (it's not by default)</li>
+            </ul>
+        </div>
+
+        <h2>How Senior Developers Use Redis</h2>
+
+        <h3>Distributed Cache with Fallback</h3>
+        <pre><code>public User getUser(Long userId) {
+    try {
+        String cached = redis.get("user:" + userId);
+        if (cached != null) {
+            metrics.increment("cache.hit");
+            return deserialize(cached);
+        }
+    } catch (RedisConnectionException e) {
+        logger.warn("Redis unavailable, falling back to DB");
+        // Continue to database
+    }
+
+    metrics.increment("cache.miss");
+    User user = database.findById(userId);
+
+    // Cache with short TTL to avoid stale data
+    try {
+        redis.setex("user:" + userId, 600, serialize(user));  // 10 min
+    } catch (RedisConnectionException e) {
+        logger.warn("Could not cache, continuing");
+    }
+
+    return user;
+}</code></pre>
+
+        <div class="box success">
+            <strong>✅ Production Patterns</strong>
+            <ul>
+                <li>Always handle connection failures gracefully</li>
+                <li>Use appropriate TTLs (not too long, not forever)</li>
+                <li>Monitor cache hit rate (should be >80%)</li>
+                <li>Set up replication for high availability</li>
+                <li>Use sentinel for automatic failover</li>
+                <li>Implement cache invalidation strategy</li>
+                <li>Monitor memory usage (set max-memory policy)</li>
+            </ul>
+        </div>
+
+        <h3>Cache Invalidation (Most Important)</h3>
+        <pre><code>// When user updates their data
+public void updateUser(Long userId, User newData) {
+    // Update database first
+    database.save(newData);
+
+    // Invalidate cache immediately (write-through)
+    redis.del("user:" + userId);
+
+    // Publish invalidation event for other services
+    redis.publish("user:updated", userId.toString());
+}</code></pre>
+
+        <h2>How Architects Think About Redis</h2>
+
+        <h3>When to Use Redis</h3>
+        <table>
+            <tr>
+                <th>Scenario</th>
+                <th>Redis? Decision</th>
+            </tr>
+            <tr>
+                <td>Read-heavy workload, fast data</td>
+                <td>✅ Yes. Cache hot data</td>
+            </tr>
+            <tr>
+                <td>Session storage</td>
+                <td>✅ Perfect. Fast, expires automatically</td>
+            </tr>
+            <tr>
+                <td>Real-time leaderboards/counters</td>
+                <td>✅ Yes. INCR is atomic and fast</td>
+            </tr>
+            <tr>
+                <td>Rate limiting</td>
+                <td>✅ Yes. INCR with TTL</td>
+            </tr>
+            <tr>
+                <td>Persistent primary data</td>
+                <td>❌ No. Use database</td>
+            </tr>
+            <tr>
+                <td>Large datasets > available RAM</td>
+                <td>❌ No. Spill to disk ruins performance</td>
+            </tr>
+        </table>
+
+        <h3>Cost Implications</h3>
+        <ul>
+            <li><strong>Infrastructure:</strong> 2-4x cost of database (need high-RAM instances)</li>
+            <li><strong>Operational:</strong> Monitor memory, handle evictions, manage persistence</li>
+            <li><strong>Reliability:</strong> Must run replicas for HA (doubles cost)</li>
+            <li><strong>Latency benefit:</strong> Worth it for high-traffic systems</li>
+        </ul>
+
+        <h2>Benefits & Pros</h2>
+        <ul>
+            <li>✅ <strong>Ultra-fast:</strong> Sub-millisecond latency</li>
+            <li>✅ <strong>Reduces database load:</strong> Cache popular queries</li>
+            <li>✅ <strong>Simple API:</strong> Easy to use key-value store</li>
+            <li>✅ <strong>Flexible data structures:</strong> Strings, Lists, Sets, Hashes, Sorted Sets</li>
+            <li>✅ <strong>Atomic operations:</strong> INCR, LPUSH are atomic</li>
+        </ul>
+
+        <h2>Pitfalls & Cons</h2>
+
+        <div class="box danger">
+            <strong>❌ Critical: Data Loss Risk</strong>
+            <p>Redis keeps data in RAM. Server crashes = data lost. Solution: Enable AOF (append-only file) or RDB persistence.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Cache Invalidation Complexity</strong>
+            <p>Phil Karlton: "There are only two hard things in computing: cache invalidation and naming things."</p>
+            <p>If you don't invalidate properly, users see stale data.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Memory Pressure</strong>
+            <p>Cache grows. If not careful, Redis uses all RAM and starts evicting data (hurts performance).</p>
+        </div>
+
+        <h2>Best Practices</h2>
+
+        <h3>1. Always Set Expiration (TTL)</h3>
+        <pre><code>// Good
+redis.setex("key", 3600, "value");  // Expires in 1 hour
+
+// Bad
+redis.set("key", "value");  // Never expires!</code></pre>
+
+        <h3>2. Monitor Cache Hit Rate</h3>
+        <pre><code>// Track hits and misses
+if (redis.exists(key)) {
+    metrics.increment("cache.hit");
+} else {
+    metrics.increment("cache.miss");
+}
+
+// Target: >80% hit rate</code></pre>
+
+        <h3>3. Handle Failures Gracefully</h3>
+        <pre><code>try {
+    return redis.get(key);
+} catch (RedisConnectionException e) {
+    logger.warn("Redis failed, using fallback");
+    return database.query();  // Fallback
+}</code></pre>
+
+        <h3>4. Use Connection Pooling</h3>
+        <pre><code>// Good: Pool reuses connections
+JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
+Jedis jedis = pool.getResource();
+try {
+    jedis.get("key");
+} finally {
+    jedis.close();
+}</code></pre>
+
+        <h2>Real-World Examples</h2>
+
+        <h3>Session Caching</h3>
+        <pre><code>public void saveSession(String sessionId, SessionData data) {
+    redis.setex("session:" + sessionId, 1800, serialize(data));
+}
+
+public SessionData getSession(String sessionId) {
+    String data = redis.get("session:" + sessionId);
+    if (data == null) throw new SessionExpiredException();
+    return deserialize(data);
+}</code></pre>
+
+        <h3>Rate Limiting</h3>
+        <pre><code>public boolean isAllowed(String userId) {
+    String key = "rate:" + userId;
+    Long count = redis.incr(key);
+
+    if (count == 1) {
+        redis.expire(key, 60);  // 1 minute window
+    }
+
+    return count <= 100;  // Allow 100 requests per minute
+}</code></pre>
+
+        <footer>
+            <p><strong>Key Takeaway:</strong> Redis is incredibly fast but requires careful cache invalidation and memory management. Perfect for caching and sessions. Not for persistent primary data.</p>
+            <p style="margin-top: 20px;">Built for continuous learning 💙</p>
+        </footer>
+    </main>
+</body>
+</html>

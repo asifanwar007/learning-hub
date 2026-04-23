@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker - Containerization Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #0969da; --text-primary: #24292f; --text-secondary: #57606a; --border: #d0d7de; --bg-subtle: #f6f8fa; --bg-canvas: #ffffff; --code-bg: #f6f8fa; --success: #1a7f37; --warning: #9e6a03; --danger: #da3633; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; background-color: var(--bg-canvas); color: var(--text-primary); line-height: 1.6; display: flex; }
+        .sidebar { width: 260px; background-color: var(--bg-subtle); border-right: 1px solid var(--border); padding: 24px; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; gap: 8px; align-items: center; margin-bottom: 32px; }
+        .sidebar-nav { list-style: none; }
+        .sidebar-nav li { margin-bottom: 12px; }
+        .sidebar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; padding: 8px 12px; display: block; border-radius: 6px; transition: all 0.2s; }
+        .sidebar-nav a:hover { background-color: var(--bg-canvas); color: var(--primary); }
+        .sidebar-nav a.active { background-color: var(--bg-canvas); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); padding-left: 9px; }
+        main { margin-left: 260px; flex: 1; padding: 48px; max-width: 900px; }
+        header { border-bottom: 1px solid var(--border); padding: 24px 0; margin-bottom: 48px; }
+        h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        .subtitle { font-size: 16px; color: var(--text-secondary); }
+        h2 { font-size: 24px; font-weight: 700; margin-top: 40px; margin-bottom: 20px; color: var(--text-primary); padding-top: 16px; border-top: 1px solid var(--border); }
+        h2:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+        h3 { font-size: 18px; font-weight: 600; margin-top: 24px; margin-bottom: 12px; }
+        p { margin-bottom: 16px; color: var(--text-secondary); line-height: 1.8; }
+        ul, ol { margin-left: 24px; margin-bottom: 16px; }
+        li { margin-bottom: 10px; color: var(--text-secondary); }
+        strong { color: var(--text-primary); font-weight: 600; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; color: #d73a49; }
+        pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 20px 0; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: var(--text-primary); }
+        .box { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 24px 0; background: var(--bg-subtle); }
+        .box.success { border-color: var(--success); background: #dafbe1; }
+        .box.warning { border-color: var(--warning); background: #fff8c5; }
+        .box.danger { border-color: var(--danger); background: #ffebe9; }
+        .box strong { display: block; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 24px 0; border: 1px solid var(--border); font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        footer { border-top: 1px solid var(--border); margin-top: 64px; padding-top: 32px; font-size: 14px; color: var(--text-secondary); }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .summary-box { background: var(--bg-subtle); border-left: 4px solid var(--primary); border-radius: 4px; padding: 20px; margin: 24px 0; }
+        @media (max-width: 768px) { body { flex-direction: column; } .sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); } main { margin-left: 0; padding: 24px 16px; } h1 { font-size: 28px; } h2 { font-size: 20px; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/guides/">All Guides</a></li>
+                <li><a href="docker.html" class="active">Docker</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>🐳 Docker</h1>
+            <p class="subtitle">Containerization platform for packaging applications with all dependencies</p>
+        </header>
+
+        <div class="summary-box">
+            <h3>📋 Executive Summary</h3>
+            <p><strong>What:</strong> Docker packages your application code, libraries, and runtime into a container. "Works on my machine" becomes "works everywhere".</p>
+            <p><strong>Why:</strong> Eliminates environment inconsistencies. Same container runs on laptop, CI/CD, staging, production.</p>
+            <p><strong>Core concept:</strong> Image (blueprint) → Container (running instance)</p>
+            <p><strong>When to use:</strong> Any application you want to ship consistently. Default choice for most apps.</p>
+            <p><strong>Learning curve:</strong> 1-2 weeks to be productive, months to master</p>
+        </div>
+
+        <h2>Core Concepts</h2>
+
+        <h3>Image vs Container</h3>
+        <table>
+            <tr>
+                <th>Image</th>
+                <th>Container</th>
+            </tr>
+            <tr>
+                <td>Blueprint/Template</td>
+                <td>Running instance</td>
+            </tr>
+            <tr>
+                <td>Immutable</td>
+                <td>Mutable (logs, state changes)</td>
+            </tr>
+            <tr>
+                <td>Stored on disk</td>
+                <td>Runs in memory</td>
+            </tr>
+            <tr>
+                <td>Created once, reused</td>
+                <td>Created/destroyed frequently</td>
+            </tr>
+            <tr>
+                <td>Example: Docker image</td>
+                <td>Example: Running process</td>
+            </tr>
+        </table>
+
+        <h2>How Junior Developers Use Docker</h2>
+
+        <h3>Build Your First Docker Image</h3>
+        <pre><code># 1. Create Dockerfile
+# Dockerfile
+FROM python:3.11
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+EXPOSE 5000
+CMD ["python", "app.py"]
+
+# 2. Build image
+docker build -t my-app:1.0 .
+
+# 3. Run container
+docker run -p 5000:5000 my-app:1.0
+
+# 4. Container runs, app available at localhost:5000
+
+# 5. Stop container
+docker stop <container_id></code></pre>
+
+        <h3>Essential Docker Commands</h3>
+        <pre><code># Build and manage images
+docker build -t myapp:1.0 .
+docker images
+docker tag myapp:1.0 registry.com/myapp:1.0
+docker push registry.com/myapp:1.0
+
+# Run containers
+docker run -p 8080:8080 myapp:1.0
+docker run -it myapp:1.0 /bin/bash  # Interactive
+docker run -d myapp:1.0  # Detached (background)
+
+# Manage running containers
+docker ps  # List running
+docker ps -a  # List all
+docker logs <container_id>
+docker exec -it <container_id> /bin/bash
+docker stop <container_id>
+docker rm <container_id></code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Beginner Mistakes</strong>
+            <ul>
+                <li>🚨 Using "latest" tag (unpredictable)</li>
+                <li>🚨 Not cleaning up images/containers (disk space)</li>
+                <li>🚨 Running as root (security)</li>
+                <li>🚨 Large images (slow push/pull)</li>
+                <li>🚨 Forgetting .dockerignore (includes unnecessary files)</li>
+            </ul>
+        </div>
+
+        <h2>How Senior Developers Use Docker</h2>
+
+        <h3>Production-Grade Dockerfile</h3>
+        <pre><code># Multi-stage build (reduces image size)
+FROM node:18 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:18-slim
+WORKDIR /app
+# Run as non-root user
+RUN useradd -m -u 1000 appuser
+COPY --from=builder --chown=appuser:appuser /app/dist ./dist
+COPY --from=builder --chown=appuser:appuser /app/node_modules ./node_modules
+USER appuser
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node healthcheck.js
+CMD ["node", "dist/index.js"]</code></pre>
+
+        <h3>Docker Compose for Development</h3>
+        <pre><code># docker-compose.yml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  db_data:</code></pre>
+
+        <p>Run entire stack: <code>docker-compose up</code></p>
+
+        <h2>How Architects Think About Docker</h2>
+
+        <h3>Image Size Matters</h3>
+        <table>
+            <tr>
+                <th>Base Image</th>
+                <th>Size</th>
+                <th>Pros</th>
+                <th>Cons</th>
+            </tr>
+            <tr>
+                <td>ubuntu:latest</td>
+                <td>77MB</td>
+                <td>Familiar</td>
+                <td>Bloated with utils</td>
+            </tr>
+            <tr>
+                <td>alpine:latest</td>
+                <td>7MB</td>
+                <td>Tiny</td>
+                <td>Minimal tools</td>
+            </tr>
+            <tr>
+                <td>python:3.11-slim</td>
+                <td>125MB</td>
+                <td>Balanced</td>
+                <td>Just enough</td>
+            </tr>
+            <tr>
+                <td>python:3.11</td>
+                <td>1GB</td>
+                <td>Full-featured</td>
+                <td>Heavy</td>
+            </tr>
+        </table>
+
+        <h2>Benefits & Pros</h2>
+        <ul>
+            <li>✅ <strong>Consistency:</strong> Same container everywhere (laptop to prod)</li>
+            <li>✅ <strong>Isolation:</strong> Apps don't interfere with each other</li>
+            <li>✅ <strong>Dependency management:</strong> All libraries included</li>
+            <li>✅ <strong>Easy deployment:</strong> Push image, run container</li>
+            <li>✅ <strong>Microservices-friendly:</strong> Each service in own container</li>
+        </ul>
+
+        <h2>Pitfalls & Cons</h2>
+
+        <div class="box danger">
+            <strong>❌ Storing secrets in images</strong>
+            <p>Docker images are just tar files. Anyone can extract your API keys.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Oversized images</strong>
+            <p>1GB image takes 5+ minutes to push/pull. Wastes time and bandwidth.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Not cleaning up</strong>
+            <p>Unused images pile up. Can consume 10s of GB.</p>
+        </div>
+
+        <h2>Best Practices</h2>
+
+        <h3>1. Use Multi-Stage Builds</h3>
+        <p>Build in one stage, copy only artifacts to final stage. Reduces image size dramatically.</p>
+
+        <h3>2. Pin Base Image Versions</h3>
+        <pre><code>// Good
+FROM python:3.11.1-slim
+
+// Bad
+FROM python:latest</code></pre>
+
+        <h3>3. Run as Non-Root</h3>
+        <pre><code>RUN useradd -m appuser
+USER appuser</code></pre>
+
+        <h3>4. Use .dockerignore</h3>
+        <pre><code>node_modules
+.git
+.gitignore
+.env
+__pycache__
+.pytest_cache</code></pre>
+
+        <h2>Real-World Example: Node.js App</h2>
+        <pre><code># Dockerfile
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+FROM node:18-alpine
+WORKDIR /app
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+USER nodejs
+EXPOSE 3000
+CMD ["node", "server.js"]
+
+# Build and run
+$ docker build -t myapp:1.0 .
+$ docker run -p 3000:3000 myapp:1.0</code></pre>
+
+        <footer>
+            <p><strong>Key Takeaway:</strong> Docker is standard for all modern applications. Master Dockerfile, Docker Compose, and image optimization. Don't store secrets in images.</p>
+            <p style="margin-top: 20px;">Built for continuous learning 💙</p>
+        </footer>
+    </main>
+</body>
+</html>

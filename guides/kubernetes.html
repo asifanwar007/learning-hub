@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes - Container Orchestration Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+            --code-bg: #f6f8fa;
+            --success: #1a7f37;
+            --warning: #9e6a03;
+            --danger: #da3633;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .sidebar-nav {
+            list-style: none;
+        }
+        .sidebar-nav li {
+            margin-bottom: 12px;
+        }
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .sidebar-nav a:hover {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+        }
+        .sidebar-nav a.active {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 48px;
+            max-width: 900px;
+        }
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            margin-bottom: 48px;
+        }
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        p { margin-bottom: 16px; color: var(--text-secondary); line-height: 1.8; }
+        ul, ol { margin-left: 24px; margin-bottom: 16px; }
+        li { margin-bottom: 10px; color: var(--text-secondary); }
+        strong { color: var(--text-primary); font-weight: 600; }
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            color: #d73a49;
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        pre code { background: none; padding: 0; color: var(--text-primary); }
+        .box {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            background: var(--bg-subtle);
+        }
+        .box.success { border-color: var(--success); background: #dafbe1; }
+        .box.warning { border-color: var(--warning); background: #fff8c5; }
+        .box.danger { border-color: var(--danger); background: #ffebe9; }
+        .box strong { display: block; margin-bottom: 8px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            border: 1px solid var(--border);
+            font-size: 14px;
+        }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        footer { border-top: 1px solid var(--border); margin-top: 64px; padding-top: 32px; font-size: 14px; color: var(--text-secondary); }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .toc { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 24px 0; }
+        .toc p { margin: 0 0 12px 0; font-weight: 600; color: var(--text-primary); }
+        .toc ul { margin: 0; list-style: none; }
+        .toc li { margin: 6px 0; }
+        .toc a { font-size: 14px; }
+        .summary-box {
+            background: var(--bg-subtle);
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+            main { margin-left: 0; padding: 24px 16px; }
+            h1 { font-size: 28px; }
+            h2 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/guides/">All Guides</a></li>
+                <li><a href="kubernetes.html" class="active">Kubernetes</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>🐳 Kubernetes</h1>
+            <p class="subtitle">Container orchestration platform for deploying, scaling, and managing containerized applications</p>
+        </header>
+
+        <div class="summary-box">
+            <h3>📋 Executive Summary</h3>
+            <p><strong>What:</strong> Kubernetes (K8s) is an open-source container orchestration platform that automates deployment, scaling, and management of containerized workloads.</p>
+            <p><strong>Scale:</strong> Powers production deployments at Google, Amazon, Microsoft, and manages millions of containers daily</p>
+            <p><strong>When to use:</strong> Multi-container applications, microservices, need for auto-scaling, high availability requirements</p>
+            <p><strong>Core concepts:</strong> Pods, Services, Deployments, ConfigMaps, Secrets, Ingress</p>
+            <p><strong>Learning time:</strong> 2-4 weeks for production proficiency</p>
+        </div>
+
+        <div class="toc">
+            <p>Table of Contents</p>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#junior">Junior Developer View</a></li>
+                <li><a href="#senior">Senior Developer View</a></li>
+                <li><a href="#architect">Architect View</a></li>
+                <li><a href="#benefits">Benefits & Pros</a></li>
+                <li><a href="#pitfalls">Pitfalls & Cons</a></li>
+                <li><a href="#practices">Best Practices</a></li>
+                <li><a href="#examples">Real-World Examples</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">Overview & Core Concepts</h2>
+        <p>Kubernetes is a declarative platform for orchestrating containerized applications. Instead of manually managing Docker containers across servers, you declare what you want, and Kubernetes makes it happen.</p>
+
+        <h3>Core Architecture</h3>
+        <pre><code>Your Application (Microservices)
+        ↓
+Docker Containers
+        ↓
+Kubernetes Cluster
+├─ Control Plane (Master)
+│  ├─ API Server
+│  ├─ Scheduler
+│  └─ Controller Manager
+└─ Worker Nodes
+   ├─ kubelet
+   ├─ Container Runtime
+   └─ kube-proxy</code></pre>
+
+        <h3>Key Concepts</h3>
+        <table>
+            <tr>
+                <th>Concept</th>
+                <th>What It Does</th>
+                <th>Real Example</th>
+            </tr>
+            <tr>
+                <td><strong>Pod</strong></td>
+                <td>Smallest deployable unit. One or more containers sharing network.</td>
+                <td>Your API server running in a container</td>
+            </tr>
+            <tr>
+                <td><strong>Service</strong></td>
+                <td>Network abstraction. Internal DNS + load balancer for Pods.</td>
+                <td>api-service.default.svc.cluster.local</td>
+            </tr>
+            <tr>
+                <td><strong>Deployment</strong></td>
+                <td>Declarative updates. Says "run 3 replicas of my app"</td>
+                <td>3 copies of API server, auto-heals if one dies</td>
+            </tr>
+            <tr>
+                <td><strong>ConfigMap</strong></td>
+                <td>Configuration as a resource (non-secret)</td>
+                <td>Database host, API timeout values</td>
+            </tr>
+            <tr>
+                <td><strong>Secret</strong></td>
+                <td>Encrypted configuration for sensitive data</td>
+                <td>Database passwords, API keys</td>
+            </tr>
+            <tr>
+                <td><strong>Ingress</strong></td>
+                <td>HTTP(S) routing into cluster</td>
+                <td>Route api.example.com → API service</td>
+            </tr>
+        </table>
+
+        <h2 id="junior">How Junior Developers Use Kubernetes</h2>
+        <p>Start with the basics. Don't worry about advanced networking yet.</p>
+
+        <h3>Your First Deployment</h3>
+        <pre><code># 1. Write a deployment manifest (deployment.yaml)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app
+        image: my-app:1.0
+        ports:
+        - containerPort: 8080
+
+# 2. Deploy to Kubernetes
+kubectl apply -f deployment.yaml
+
+# 3. Check status
+kubectl get deployments
+kubectl get pods
+kubectl logs pod-name
+
+# 4. Expose your app
+kubectl expose deployment my-app --type=LoadBalancer --port=80 --target-port=8080</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Common Beginner Mistakes</strong>
+            <ul>
+                <li>🚨 Using latest tag instead of specific versions (unpredictable)</li>
+                <li>🚨 No resource requests/limits (pods can crash cluster)</li>
+                <li>🚨 Storing secrets in ConfigMaps (security risk)</li>
+                <li>🚨 Not setting up health checks (zombie pods)</li>
+                <li>🚨 Running as root in containers (security issue)</li>
+            </ul>
+        </div>
+
+        <h3>Essential kubectl Commands</h3>
+        <pre><code># View resources
+kubectl get pods
+kubectl get services
+kubectl get deployments
+kubectl describe pod pod-name
+
+# Debug
+kubectl logs pod-name
+kubectl logs pod-name --previous  # Crashed pod logs
+kubectl exec -it pod-name -- bash
+
+# Create/Update
+kubectl apply -f file.yaml
+kubectl set image deployment/my-app my-app=my-app:2.0
+
+# Delete
+kubectl delete pod pod-name
+kubectl delete deployment my-app</code></pre>
+
+        <h2 id="senior">How Senior Developers Use Kubernetes</h2>
+        <p>Focus on reliability, observability, and production patterns.</p>
+
+        <h3>Production-Grade Deployment</h3>
+        <pre><code># deployment.yaml with production patterns
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-server
+  namespace: production
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: api-server
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: api-server
+        version: v2
+    spec:
+      # Pod disruption budget for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - api-server
+              topologyKey: kubernetes.io/hostname
+
+      containers:
+      - name: api-server
+        image: registry.example.com/api-server:2.0.1
+        imagePullPolicy: IfNotPresent
+
+        # Resource management (critical!)
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+        # Environment configuration
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: db-host
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+
+        # Graceful shutdown
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+
+      # Pod-level settings
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+
+      # Pod disruption budget (PDB)
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-server-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: api-server</code></pre>
+
+        <div class="box success">
+            <strong>✅ Production Patterns</strong>
+            <ul>
+                <li>Always use specific image versions (not "latest")</li>
+                <li>Set resource requests/limits (prevents cluster collapse)</li>
+                <li>Implement liveness & readiness probes (automatic recovery)</li>
+                <li>Use PodDisruptionBudgets (maintain availability during updates)</li>
+                <li>Pod anti-affinity (spread across nodes)</li>
+                <li>SecurityContext (non-root users)</li>
+                <li>RollingUpdate strategy (zero-downtime deploys)</li>
+            </ul>
+        </div>
+
+        <h3>Debugging Production Issues</h3>
+        <pre><code># Check pod events (most useful!)
+kubectl describe pod problem-pod
+
+# View recent logs with context
+kubectl logs pod-name --tail=100 -f
+
+# Check resource usage
+kubectl top pods
+kubectl top nodes
+
+# Check node status
+kubectl get nodes -o wide
+kubectl describe node node-name
+
+# Check for scheduling issues
+kubectl get events --sort-by='.lastTimestamp'
+
+# Debug networking
+kubectl run debug --image=nicolaka/netshoot -it --rm -- bash
+# Then: nslookup service-name, curl http://service-name:port, etc</code></pre>
+
+        <h2 id="architect">How Architects Think About Kubernetes</h2>
+
+        <h3>When to Use Kubernetes</h3>
+        <table>
+            <tr>
+                <th>Scenario</th>
+                <th>K8s? Why/Why Not</th>
+            </tr>
+            <tr>
+                <td>Single monolithic app</td>
+                <td>❌ Overkill. Use Docker + VMs or Docker Swarm</td>
+            </tr>
+            <tr>
+                <td>10+ microservices, high traffic</td>
+                <td>✅ Perfect fit. Auto-scaling, load balancing, resilience</td>
+            </tr>
+            <tr>
+                <td>Batch jobs, data processing</td>
+                <td>✅ Yes. Job/CronJob resources for scheduled work</td>
+            </tr>
+            <tr>
+                <td>Real-time games, low latency critical</td>
+                <td>⚠️ Maybe. K8s adds 50-100ms latency overhead</td>
+            </tr>
+            <tr>
+                <td>Startup with <3 engineers</td>
+                <td>❌ Don't. Too much operational burden</td>
+            </tr>
+            <tr>
+                <td>Enterprise with DevOps team</td>
+                <td>✅ Absolutely. ROI on tooling and automation</td>
+            </tr>
+        </table>
+
+        <h3>Cost Implications</h3>
+        <ul>
+            <li><strong>Infrastructure cost:</strong> 25-40% higher than VMs (due to overhead, wasted resources)</li>
+            <li><strong>Learning cost:</strong> 3-6 months for team to be production-ready</li>
+            <li><strong>Operational cost:</strong> High initially (setup, monitoring, debugging), drops long-term</li>
+            <li><strong>Time-to-value:</strong> 3-6 months before seeing productivity gains</li>
+        </ul>
+
+        <h3>Alternatives Matrix</h3>
+        <table>
+            <tr>
+                <th>Solution</th>
+                <th>Complexity</th>
+                <th>Auto-Scaling</th>
+                <th>Cost</th>
+                <th>Best For</th>
+            </tr>
+            <tr>
+                <td>Docker Swarm</td>
+                <td>Low</td>
+                <td>Basic</td>
+                <td>Very Low</td>
+                <td>Small teams, simple apps</td>
+            </tr>
+            <tr>
+                <td>Kubernetes</td>
+                <td>High</td>
+                <td>Excellent</td>
+                <td>High</td>
+                <td>Large scale, microservices</td>
+            </tr>
+            <tr>
+                <td>Serverless (Lambda)</td>
+                <td>Low</td>
+                <td>Automatic</td>
+                <td>Per-execution</td>
+                <td>Event-driven, spiky workloads</td>
+            </tr>
+            <tr>
+                <td>PaaS (Heroku)</td>
+                <td>Very Low</td>
+                <td>Built-in</td>
+                <td>Very High</td>
+                <td>Rapid prototyping</td>
+            </tr>
+        </table>
+
+        <h2 id="benefits">Benefits & Pros</h2>
+
+        <h3>1. Automatic Scaling</h3>
+        <pre><code># Horizontal Pod Autoscaling (HPA)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70</code></pre>
+        <p>✅ <strong>Result:</strong> Automatically scales from 3 to 10 pods based on CPU usage. Zero intervention.</p>
+
+        <h3>2. High Availability & Self-Healing</h3>
+        <p>✅ Pod crashes? Kubernetes restarts it. Node dies? Pods move to healthy nodes. No manual intervention needed.</p>
+
+        <h3>3. Rolling Updates (Zero Downtime)</h3>
+        <p>✅ Deploy new version, Kubernetes gradually replaces old pods with new ones. Users never experience downtime.</p>
+
+        <h3>4. Declarative Configuration</h3>
+        <p>✅ Version control your infrastructure. Git becomes your source of truth.</p>
+
+        <h3>5. Multi-Cloud & Portability</h3>
+        <p>✅ Same manifests work on AWS EKS, Google GKE, Azure AKS, on-premises. Vendor lock-in reduced.</p>
+
+        <h2 id="pitfalls">Pitfalls & Cons</h2>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #1: Resource Limits Kill Your Pods</strong>
+            <p>If you set memory limit too low, pods get OOMKilled (out of memory) randomly.</p>
+        </div>
+
+        <pre><code>// 🚨 BAD - Memory limit too aggressive
+resources:
+  limits:
+    memory: "128Mi"  # Too low for real app!
+
+// ✅ GOOD - Set reasonable limits
+resources:
+  requests:
+    memory: "256Mi"  # Minimum needed
+  limits:
+    memory: "512Mi"  # Can spike to this</code></pre>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #2: No Resource Requests</strong>
+            <p>Pods with no requests get scheduled anywhere, causing cascading failures.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #3: Complexity Explosion</strong>
+            <p>Kubernetes is powerful but complex. Easy to over-engineer. Start simple.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #4: Debugging is Hard</strong>
+            <p>Network issues, pod scheduling, image pull errors are cryptic. Need strong observability.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #5: Cost Surprises</strong>
+            <p>If not managed, cloud bills can explode (idle pods, persistent volumes, load balancers).</p>
+        </div>
+
+        <h2 id="practices">Best Practices & Guardrails</h2>
+
+        <h3>1. Always Use Namespaces</h3>
+        <pre><code>kubectl create namespace production
+kubectl apply -f deployment.yaml -n production</code></pre>
+
+        <h3>2. Resource Quotas Per Namespace</h3>
+        <pre><code>apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+  namespace: production
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: "20Gi"
+    limits.cpu: "20"
+    limits.memory: "40Gi"</code></pre>
+
+        <h3>3. Network Policies (Firewall Rules)</h3>
+        <pre><code># Only allow API to DB traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      tier: database
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          tier: api
+    ports:
+    - protocol: TCP
+      port: 5432</code></pre>
+
+        <h3>4. Always Use RBAC</h3>
+        <p>Don't give everyone full cluster access. Use Role-Based Access Control.</p>
+
+        <h3>5. Monitor Everything</h3>
+        <p>Implement Prometheus + Grafana for metrics, ELK for logs, Jaeger for traces.</p>
+
+        <h2 id="examples">Real-World Examples</h2>
+
+        <h3>Example: E-Commerce Microservices</h3>
+        <pre><code># Production setup with API, Database, Cache
+---
+# API Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: myregistry/api:1.2.3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+# API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer
+---
+# Autoscaling
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        averageUtilization: 70</code></pre>
+
+        <h3>Deployment Workflow</h3>
+        <pre><code># 1. Develop and test locally
+docker build -t myregistry/api:1.2.3 .
+
+# 2. Push to registry
+docker push myregistry/api:1.2.3
+
+# 3. Update manifest
+# Change image in deployment.yaml to new version
+
+# 4. Deploy
+kubectl apply -f deployment.yaml
+
+# 5. Monitor rollout
+kubectl rollout status deployment/api-server
+
+# 6. If issues, rollback
+kubectl rollout undo deployment/api-server</code></pre>
+
+        <footer>
+            <p><strong>Key Takeaway:</strong> Kubernetes is powerful for scalable systems but has a learning curve. Start with basics (Deployment, Service), add complexity as needed. Always prioritize observability and resource management.</p>
+            <p style="margin-top: 20px;">Built for continuous learning 💙</p>
+        </footer>
+    </main>
+</body>
+</html>
