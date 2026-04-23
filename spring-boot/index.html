@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Boot Learning - Learning Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 48px;
+            max-width: 900px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .guides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .guide-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            background: var(--bg-canvas);
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .guide-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .guide-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .guide-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .guide-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            flex-grow: 1;
+        }
+
+        .guide-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .coming-soon {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .coming-soon::after {
+            content: ' (Coming soon)';
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 64px;
+            padding-top: 32px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 16px;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .guides-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="index.html" class="active">Spring Boot</a></li>
+                <li><a href="retryable.html">@Retryable</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>Spring Boot Learning</h1>
+            <p class="subtitle">Deep dives into Spring Boot annotations, patterns, and architecture</p>
+        </header>
+
+        <h2>Advanced Patterns & Features</h2>
+        <p>Comprehensive guides covering critical Spring Boot concepts from a senior architecture perspective, including benefits, pitfalls, cost analysis, and best practices.</p>
+
+        <div class="guides-grid">
+            <a href="retryable.html" class="guide-card">
+                <div class="guide-icon">🔄</div>
+                <div class="guide-title">@Retryable</div>
+                <div class="guide-desc">Implement resilient retry logic. Learn when to retry, pitfalls to avoid, cost analysis, and senior architecture thinking.</div>
+                <span class="guide-link">Read Guide →</span>
+            </a>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">⚡</div>
+                <div class="guide-title">@Async & Threading</div>
+                <div class="guide-desc">Non-blocking operations, thread pools, and async patterns. When to use, performance implications, and best practices.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">💾</div>
+                <div class="guide-title">@Cacheable</div>
+                <div class="guide-desc">Caching strategies, cache invalidation, distributed caching, and pitfalls of over-caching.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">🔒</div>
+                <div class="guide-title">Spring Security</div>
+                <div class="guide-desc">Authentication, authorization, JWT, OAuth2, and common security vulnerabilities.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">🌐</div>
+                <div class="guide-title">Spring Cloud</div>
+                <div class="guide-desc">Microservices patterns, service discovery, load balancing, and distributed tracing.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">📊</div>
+                <div class="guide-title">Transactions & Data</div>
+                <div class="guide-desc">@Transactional semantics, isolation levels, deadlocks, and N+1 query problems.</div>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>About these guides:</strong> Each guide covers benefits, pitfalls, cost of usage, senior architecture thinking, best practices, guardrails, and real-world examples.</p>
+            <p style="margin-top: 20px;">Built for developers learning Spring Boot 💙</p>
+        </footer>
+    </main>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Systems Architecture - Learning Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 48px;
+            max-width: 900px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .guides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .guide-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            background: var(--bg-canvas);
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .guide-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .guide-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .guide-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .guide-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            flex-grow: 1;
+        }
+
+        .guide-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .coming-soon {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .coming-soon::after {
+            content: ' (Coming soon)';
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 64px;
+            padding-top: 32px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 16px;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .guides-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="index.html" class="active">Payment Systems</a></li>
+                <li><a href="juspay-architecture.html">JusPay Deep Dive</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>Payment Systems Architecture</h1>
+            <p class="subtitle">Master payment processing, debugging, and system design at scale</p>
+        </header>
+
+        <h2>Core Payment Guides</h2>
+        <p>Senior-level architecture guides for building, debugging, and scaling payment systems. Covers payment gateways, API integration, failure handling, and production considerations.</p>
+
+        <div class="guides-grid">
+            <a href="juspay-architecture.html" class="guide-card">
+                <div class="guide-icon">💳</div>
+                <div class="guide-title">JusPay Architecture</div>
+                <div class="guide-desc">Complete technical deep-dive into JusPay payment gateway. Learn payment flows, API integration, webhook handling, debugging strategies, pitfalls, and production best practices.</div>
+                <span class="guide-link">Read Guide →</span>
+            </a>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">🔄</div>
+                <div class="guide-title">Payment Reconciliation</div>
+                <div class="guide-desc">Strategies for reconciling payments across systems. Handling failed transactions, retries, idempotency, and audit trails.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">🔐</div>
+                <div class="guide-title">Payment Security</div>
+                <div class="guide-desc">PCI-DSS compliance, encryption, tokenization, fraud detection, and secure credential handling.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">⚡</div>
+                <div class="guide-title">Async Payment Processing</div>
+                <div class="guide-desc">Event-driven architecture, message queues, and handling asynchronous payment notifications.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">🔍</div>
+                <div class="guide-title">Payment Debugging</div>
+                <div class="guide-desc">Systematic debugging approach for payment failures. Logging strategies, trace IDs, and production troubleshooting.</div>
+            </div>
+
+            <div class="guide-card coming-soon">
+                <div class="guide-icon">💰</div>
+                <div class="guide-title">Multi-Currency & Forex</div>
+                <div class="guide-desc">Handling multiple currencies, exchange rates, and international payment flows.</div>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>About these guides:</strong> Each guide covers architecture thinking, benefits, pitfalls, best practices, debugging strategies, guardrails, and real-world examples.</p>
+            <p style="margin-top: 20px;">Built for senior engineers designing payment systems 💙</p>
+        </footer>
+    </main>
+</body>
+</html>

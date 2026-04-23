@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@Retryable - Spring Boot Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+            --code-bg: #f6f8fa;
+            --success: #1a7f37;
+            --warning: #9e6a03;
+            --danger: #da3633;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 48px;
+            max-width: 900px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        ul, ol {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            color: #d73a49;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text-primary);
+        }
+
+        .box {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            background: var(--bg-subtle);
+        }
+
+        .box.success {
+            border-color: var(--success);
+            background: #dafbe1;
+        }
+
+        .box.warning {
+            border-color: var(--warning);
+            background: #fff8c5;
+        }
+
+        .box.danger {
+            border-color: var(--danger);
+            background: #ffebe9;
+        }
+
+        .box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            border: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-subtle);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: var(--bg-subtle);
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 64px;
+            padding-top: 32px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .toc {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+        }
+
+        .toc p {
+            margin: 0 0 12px 0;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .toc ul {
+            margin: 0;
+            list-style: none;
+        }
+
+        .toc li {
+            margin: 6px 0;
+        }
+
+        .toc a {
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 16px;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="index.html">Spring Boot</a></li>
+                <li><a href="retryable.html" class="active">@Retryable</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>@Retryable in Spring Boot</h1>
+            <p class="subtitle">A comprehensive guide to implementing resilient retry logic</p>
+        </header>
+
+        <div class="toc">
+            <p>Table of Contents</p>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#benefits">Benefits</a></li>
+                <li><a href="#pitfalls">Pitfalls & Dangers</a></li>
+                <li><a href="#cost">Cost of Usage</a></li>
+                <li><a href="#architecture">Senior Architecture Thinking</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#guardrails">Guardrails</a></li>
+                <li><a href="#examples">Examples</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p><code>@Retryable</code> is a Spring Retry annotation that automatically retries a method when it throws specified exceptions. It's part of the Spring Retry project and provides declarative retry logic without cluttering your code with boilerplate.</p>
+
+        <pre><code>@Retryable(
+    value = {IOException.class},
+    maxAttempts = 3,
+    backoff = @Backoff(delay = 1000, multiplier = 2.0)
+)
+public String callExternalApi() {
+    // This method will be retried up to 3 times with exponential backoff
+}</code></pre>
+
+        <h2 id="benefits">Benefits</h2>
+
+        <h3>1. Improved Resilience</h3>
+        <p>Handles transient failures gracefully without user intervention. Network glitches, temporary service unavailability, and rate limiting are automatically recovered from.</p>
+
+        <h3>2. Clean Code</h3>
+        <p>Eliminates manual try-catch loops and retry counters. Your business logic remains focused and readable.</p>
+
+        <h3>3. Configurable Backoff Strategies</h3>
+        <p>Supports multiple backoff strategies:</p>
+        <ul>
+            <li><strong>Fixed Delay:</strong> Wait the same duration between retries</li>
+            <li><strong>Exponential Backoff:</strong> Increase wait time exponentially (1s, 2s, 4s, 8s...)</li>
+            <li><strong>Random Delay:</strong> Add jitter to prevent thundering herd</li>
+        </ul>
+
+        <h3>4. Recovery Callbacks</h3>
+        <p>Use <code>@Recover</code> to handle final failures gracefully with fallback logic.</p>
+
+        <h3>5. Declarative & Consistent</h3>
+        <p>Consistent retry behavior across your application with minimal configuration.</p>
+
+        <h2 id="pitfalls">Pitfalls & Dangers</h2>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #1: Retrying Non-Idempotent Operations</strong>
+            <p>Retrying operations that modify state can cause duplicate writes, double-charging customers, or corrupted data.</p>
+        </div>
+
+        <pre><code>// 🚨 DANGEROUS - Will charge multiple times if retried
+@Retryable(value = TimeoutException.class)
+public void chargeCustomer(String customerId, double amount) {
+    paymentService.charge(customerId, amount);
+    // If this times out and retries, customer charged twice!
+}</code></pre>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #2: Exponential Backoff Without Jitter</strong>
+            <p>Multiple clients retrying in sync causes thundering herd problem. All requests hit your service at the same time, making it worse.</p>
+        </div>
+
+        <pre><code>// 🚨 BAD - All clients retry at 1s, 2s, 4s (synchronized)
+@Retryable(backoff = @Backoff(delay = 1000, multiplier = 2.0))
+public String callService() { }
+
+// ✅ GOOD - Add jitter to randomize retry times
+@Retryable(backoff = @Backoff(
+    delay = 1000,
+    multiplier = 2.0,
+    maxDelay = 30000,
+    random = true  // Add randomness
+))
+public String callService() { }
+</code></pre>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #3: Retrying Permanent Errors</strong>
+            <p>Some errors are permanent (401 Unauthorized, 403 Forbidden, validation errors). Retrying them is waste of time and resources.</p>
+        </div>
+
+        <pre><code>// 🚨 BAD - Retries 401 Unauthorized 3 times (pointless)
+@Retryable(value = HttpClientErrorException.class)
+public String callApi() {
+    return restTemplate.getForObject("https://api.example.com/data", String.class);
+}
+
+// ✅ GOOD - Only retry transient errors
+@Retryable(
+    value = {HttpServerErrorException.class, TimeoutException.class},
+    exclude = {HttpClientErrorException.class}
+)
+public String callApi() { }
+</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #4: Cascading Retries</strong>
+            <p>If service A retries → calls service B → service B retries → calls service C with retries, you get exponential retry storms.</p>
+            <p>Example: 3 retries × 3 retries × 3 retries = 27 actual attempts from a single request!</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #5: Infinite Retry Loops</strong>
+            <p>Without proper exception handling or max attempts, retries can loop forever, hanging threads and exhausting resources.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #6: Missing Monitoring</strong>
+            <p>Without logging/metrics on retries, you won't know if your system is constantly failing and recovering in the background.</p>
+        </div>
+
+        <h2 id="cost">Cost of Usage</h2>
+
+        <h3>CPU & Memory Cost</h3>
+        <ul>
+            <li><strong>Minimal overhead:</strong> @Retryable uses AOP (aspect-oriented programming) which adds ~1-2% CPU per method call</li>
+            <li><strong>Thread blocking:</strong> During backoff delays, threads are blocked (use reactive code if this is critical)</li>
+            <li><strong>Increased latency:</strong> With 3 retries and exponential backoff, worst case is 1 + 2 + 4 = 7 seconds added latency</li>
+        </ul>
+
+        <h3>Resource Cost</h3>
+        <ul>
+            <li><strong>Connection timeouts:</strong> Each retry consumes database/network connections during backoff</li>
+            <li><strong>Cascading failures:</strong> Can multiply load on failing services by retry factor</li>
+            <li><strong>Log volume:</strong> Each retry generates logs, potentially doubling/tripling log volume</li>
+        </ul>
+
+        <h3>Business Cost</h3>
+        <ul>
+            <li><strong>Degraded UX:</strong> 7-second request latency frustrates users</li>
+            <li><strong>Failed operations:</strong> If all retries fail, user still gets error (but after waiting)</li>
+            <li><strong>Rate limiting:</strong> Your retries might trigger rate limits on downstream APIs</li>
+        </ul>
+
+        <table>
+            <tr>
+                <th>Configuration</th>
+                <th>Max Latency (Best Case)</th>
+                <th>Max Latency (Worst Case)</th>
+                <th>Cost Assessment</th>
+            </tr>
+            <tr>
+                <td>3 attempts, 1s fixed delay</td>
+                <td>~100ms</td>
+                <td>2-3 seconds</td>
+                <td>Acceptable for most APIs</td>
+            </tr>
+            <tr>
+                <td>3 attempts, exponential backoff (1s, 2s, 4s)</td>
+                <td>~100ms</td>
+                <td>7-8 seconds</td>
+                <td>Too slow for user-facing APIs</td>
+            </tr>
+            <tr>
+                <td>5 attempts, exponential backoff</td>
+                <td>~100ms</td>
+                <td>31+ seconds</td>
+                <td>Unacceptable</td>
+            </tr>
+        </table>
+
+        <h2 id="architecture">Senior Architecture Thinking</h2>
+
+        <h3>Principle #1: Separate Concerns by Failure Domain</h3>
+        <p>Not all services fail the same way. Your retry strategy should differ:</p>
+
+        <pre><code>// For flaky internal services: Be aggressive
+@Retryable(
+    value = {SocketTimeoutException.class},
+    maxAttempts = 3,
+    backoff = @Backoff(delay = 100)
+)
+public User getUserFromInternalCache() { }
+
+// For external APIs: Be conservative
+@Retryable(
+    value = {HttpServerErrorException.class},
+    maxAttempts = 2,
+    backoff = @Backoff(delay = 500)
+)
+public String callThirdPartyAPI() { }
+
+// For databases: No retries (let connection pool handle it)
+public User getUserFromDatabase() { }
+</code></pre>
+
+        <h3>Principle #2: Use Circuit Breakers, Not Just Retries</h3>
+        <p>Retries alone don't protect against systemic failures. Combine with circuit breaker pattern (e.g., Resilience4j):</p>
+
+        <pre><code>@Retryable(maxAttempts = 2)
+@CircuitBreaker(name = "paymentAPI")  // Stops retries if API is down
+public void processPayment(Order order) {
+    paymentGateway.charge(order);
+}
+</code></pre>
+
+        <p><strong>Why?</strong> If a service is completely down, retrying just wastes time and resources. Circuit breaker detects this and fast-fails after a threshold.</p>
+
+        <h3>Principle #3: Idempotency is Prerequisite</h3>
+        <p>Before adding <code>@Retryable</code> to ANY method, ask: <strong>"Can I safely call this 3 times?"</strong></p>
+
+        <ul>
+            <li><strong>Idempotent (safe to retry):</strong> GET requests, read operations, queries with unique IDs</li>
+            <li><strong>NOT idempotent (dangerous to retry):</strong> POST payments, CREATE orders, DELETE operations</li>
+        </ul>
+
+        <h3>Principle #4: Let Upstream Handle Retries</h3>
+        <p>If your service calls another service, don't retry both. One should handle it:</p>
+
+        <pre><code>// Pattern A: Service A retries calling Service B
+@Retryable  // Service A handles failure
+public void callServiceB() {
+    serviceB.process();  // Service B doesn't retry (simple)
+}
+
+// Pattern B: Service B retries internally
+public void callServiceB() {
+    serviceB.process();  // Service B has @Retryable internally
+}
+
+// ❌ Anti-pattern: Both retry (creates exponential storms)
+@Retryable
+public void callServiceB() {
+    @Retryable
+    serviceB.process();
+}
+</code></pre>
+
+        <h3>Principle #5: Observability is Non-Negotiable</h3>
+        <p>You must know when and why retries happen. Add logging and metrics:</p>
+
+        <pre><code>@Retryable(
+    value = TimeoutException.class,
+    maxAttempts = 3
+)
+@Recover
+public String callAPI() throws TimeoutException {
+    log.info("Attempting to call external API");
+    return restTemplate.getForObject("...", String.class);
+}
+
+@Recover  // Called after all retries fail
+public String recover(TimeoutException e) {
+    log.error("All retries exhausted for API call", e);
+    metrics.increment("api.call.failed");
+    return "fallback-response";
+}
+</code></pre>
+
+        <h2 id="best-practices">Best Practices</h2>
+
+        <h3>1. Keep Retry Logic Minimal</h3>
+        <p>Only retry at the exact point of failure, not at high-level business logic:</p>
+
+        <pre><code>// ✅ GOOD - Retry where the real failure can happen
+@Service
+public class PaymentService {
+    @Retryable(value = TimeoutException.class)
+    public PaymentResponse callPaymentGateway(Order order) {
+        return gateway.charge(order);  // Only this fails
+    }
+
+    public void processOrder(Order order) {
+        PaymentResponse response = callPaymentGateway(order);
+        // Rest of business logic (no retries here)
+    }
+}
+</code></pre>
+
+        <h3>2. Use Appropriate Backoff Strategies</h3>
+
+        <pre><code>// For external APIs: Exponential backoff with jitter
+@Retryable(backoff = @Backoff(
+    delay = 1000,
+    multiplier = 2.0,
+    maxDelay = 10000,
+    random = true
+))
+
+// For internal services: Fixed short delay
+@Retryable(backoff = @Backoff(delay = 100))
+
+// For batch jobs: Long exponential backoff
+@Retryable(backoff = @Backoff(
+    delay = 5000,
+    multiplier = 3.0,
+    maxDelay = 60000,
+    random = true
+))
+</code></pre>
+
+        <h3>3. Be Specific About Exceptions</h3>
+        <p>Only retry exceptions that MAY be transient:</p>
+
+        <pre><code>// ✅ GOOD
+@Retryable(value = {
+    SocketTimeoutException.class,
+    HttpServerErrorException.class,  // 5xx errors
+    ServiceUnavailableException.class
+})
+
+// ❌ BAD
+@Retryable(value = Exception.class)  // Retries EVERYTHING including bugs!
+</code></pre>
+
+        <h3>4. Always Provide Recovery Logic</h3>
+        <p>Never let retries fail silently:</p>
+
+        <pre><code>@Retryable(maxAttempts = 3)
+public String fetchUserData(String userId) {
+    return userService.getUser(userId);
+}
+
+@Recover
+public String recoverFetchUserData(Throwable e, String userId) {
+    log.error("Failed to fetch user {} after retries", userId);
+    // Option 1: Return cached data
+    return cache.getOrDefault(userId, "{}");
+
+    // Option 2: Return sensible default
+    // return buildDefaultUser(userId);
+
+    // Option 3: Rethrow with better context
+    // throw new UserServiceException("Could not fetch user", e);
+}
+</code></pre>
+
+        <h3>5. Test Retry Behavior Explicitly</h3>
+
+        <pre><code>@Test
+public void testRetryOnTimeout() {
+    when(externalApi.call())
+        .thenThrow(new TimeoutException())
+        .thenThrow(new TimeoutException())
+        .thenReturn("success");
+
+    String result = service.callWithRetry();
+
+    assertEquals("success", result);
+    verify(externalApi, times(3)).call();  // Verify it retried exactly
+}
+</code></pre>
+
+        <h2 id="guardrails">Guardrails</h2>
+
+        <div class="box">
+            <strong>Guardrail #1: Maximum 3 Retries for User-Facing APIs</strong>
+            <p>More than 3 retries means 7+ seconds of waiting. That's unacceptable UX. Instead, implement async processing or queuing.</p>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #2: Never Retry Write Operations Without Idempotency Keys</strong>
+            <p>Require idempotency keys (unique request IDs) before retrying any POST/PUT/DELETE:</p>
+            <pre><code>// Require idempotency key
+@Retryable
+public void transferMoney(TransferRequest request) {
+    // Service must track request.idempotencyKey to prevent duplicates
+}
+</code></pre>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #3: Monitor Retry Rates</strong>
+            <p>Set up alerts if retry rate exceeds threshold:</p>
+            <pre><code>// If retries > 5% of calls, something is wrong
+if (metrics.getRetryRate() > 0.05) {
+    alerts.critical("High retry rate detected");
+}
+</code></pre>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #4: Combine with Timeouts</strong>
+            <p>Never retry without a timeout. Set request timeout shorter than total retry time:</p>
+            <pre><code>// Timeout: 2s, Retry 3x with 1s delay = max 5 seconds total
+@Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000))
+@Timeout(2000)  // Each attempt times out in 2 seconds
+public String callApi() { }
+</code></pre>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #5: Document Why Retries Exist</strong>
+            <p>Add comments explaining why this specific method needs retries:</p>
+            <pre><code>/**
+ * Calls Stripe API to process payment.
+ * Retried because Stripe occasionally returns 5xx during peak load.
+ * Uses exponential backoff to avoid overwhelming their service.
+ * Requires idempotency key to prevent duplicate charges.
+ */
+@Retryable(value = {HttpServerErrorException.class}, maxAttempts = 3)
+public StripeResponse processPayment(PaymentRequest req) { }
+</code></pre>
+        </div>
+
+        <h2 id="examples">Real-World Examples</h2>
+
+        <h3>Example 1: Calling External Payment API</h3>
+        <pre><code>@Service
+public class PaymentService {
+    @Retryable(
+        value = {HttpServerErrorException.class},  // 5xx errors only
+        maxAttempts = 2,  // Don't retry too much (UX)
+        backoff = @Backoff(delay = 500)
+    )
+    public PaymentResponse charge(Order order) {
+        try {
+            return stripeClient.charge(order.getId(), order.getAmount());
+        } catch (HttpServerErrorException e) {
+            log.warn("Stripe returned 5xx, will retry", e);
+            throw e;
+        }
+    }
+
+    @Recover
+    public PaymentResponse chargeRecover(Throwable e, Order order) {
+        log.error("Payment failed for order {} after retries", order.getId(), e);
+        // Fallback: Mark as pending and retry later via async job
+        pendingPayments.add(order);
+        return new PaymentResponse("pending", order.getId());
+    }
+}
+</code></pre>
+
+        <h3>Example 2: Database Connection Retrieval</h3>
+        <pre><code>@Service
+public class UserRepository {
+    @Retryable(
+        value = {CannotGetJdbcConnectionException.class},
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 100)  // Short delay (DB pool recovering)
+    )
+    public User findById(Long userId) {
+        return jdbcTemplate.queryForObject(
+            "SELECT * FROM users WHERE id = ?",
+            new Object[]{userId},
+            userRowMapper
+        );
+    }
+
+    @Recover
+    public User findByIdRecover(Throwable e, Long userId) {
+        log.error("Database connection failed for user {}", userId);
+        // Cache miss is acceptable for reads
+        return cache.getIfPresent(userId);
+    }
+}
+</code></pre>
+
+        <h3>Example 3: Message Queue Publishing (Idempotent)</h3>
+        <pre><code>@Service
+public class EventPublisher {
+    // Safe to retry because message IDs ensure deduplication
+    @Retryable(
+        value = {BrokerNotAvailableException.class},
+        maxAttempts = 5,
+        backoff = @Backoff(delay = 1000, multiplier = 2.0)
+    )
+    public void publishEvent(DomainEvent event) {
+        // Event has unique messageId for idempotency
+        messageBroker.publish(event.getMessageId(), event);
+    }
+
+    @Recover
+    public void publishEventRecover(Throwable e, DomainEvent event) {
+        log.error("Failed to publish event {}, will be retried by async processor", event.getMessageId());
+        deadLetterQueue.add(event);
+    }
+}
+</code></pre>
+
+        <footer>
+            <p><strong>Key Takeaway:</strong> @Retryable is powerful for transient failures, but dangerous when misused. Always ask: Is this idempotent? Should I retry here or upstream? Do I have observability? Am I creating cascading retries?</p>
+            <p style="margin-top: 20px; color: var(--text-secondary);">Built for developers learning Spring Boot 💙</p>
+        </footer>
+    </main>
+</body>
+</html>

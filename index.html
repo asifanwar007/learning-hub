@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Hub - Java & Spring Boot Docs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 48px;
+            max-width: 900px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 0;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 32px;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .learning-paths {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .path-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            background: var(--bg-canvas);
+            transition: all 0.2s;
+        }
+
+        .path-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .path-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .path-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .path-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .path-topics {
+            list-style: none;
+            margin-bottom: 16px;
+        }
+
+        .path-topics li {
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        .path-topics li::before {
+            content: '•';
+            position: absolute;
+            left: 8px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .start-button {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .start-button:hover {
+            background: #0860ca;
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 64px;
+            padding-top: 32px;
+            padding-bottom: 32px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 16px;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 32px 16px;
+            }
+
+            .learning-paths {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#java">Java Programming</a></li>
+                <li><a href="#spring-boot">Spring Boot</a></li>
+                <li><a href="payments/index.html">Payment Systems</a></li>
+                <li><a href="guides/index.html">📚 All Guides</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="https://github.com" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+        <header id="home">
+            <h1>Learning Hub</h1>
+            <p class="subtitle">Master Java and Spring Boot with comprehensive tutorials and hands-on learning</p>
+        </header>
+
+        <section id="java">
+            <h2>Java Programming</h2>
+            <p>From fundamentals to advanced concepts. Learn object-oriented programming, collections, generics, and functional programming with streams.</p>
+
+            <div class="learning-paths">
+                <div class="path-card">
+                    <span class="path-icon">☕</span>
+                    <h3 class="path-title">Core Java</h3>
+                    <p class="path-description">Foundation concepts for Java development</p>
+                    <ul class="path-topics">
+                        <li>Java Basics & Setup</li>
+                        <li>Object-Oriented Programming</li>
+                        <li>Collections & Generics</li>
+                        <li>Streams & Lambdas</li>
+                    </ul>
+                    <a href="java/index.html" class="start-button">Learn More</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="spring-boot">
+            <h2>Spring Boot Development</h2>
+            <p>Build modern web applications with production-ready code. Master REST APIs, database integration, security, and deployment.</p>
+
+            <div class="learning-paths">
+                <div class="path-card">
+                    <span class="path-icon">🚀</span>
+                    <h3 class="path-title">Spring Boot Essentials</h3>
+                    <p class="path-description">Build modern web applications</p>
+                    <ul class="path-topics">
+                        <li>Spring Boot Setup</li>
+                        <li>Building REST APIs</li>
+                        <li>Database Integration</li>
+                        <li>Spring Security</li>
+                    </ul>
+                    <a href="spring-boot/index.html" class="start-button">Learn More</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="features">
+            <h2>Why Choose This Hub?</h2>
+            <p>Free, open-source learning resources designed for both beginners and experienced developers.</p>
+            <ul class="path-topics" style="margin-top: 20px;">
+                <li><strong>Clean Design</strong> - Simple, responsive interface optimized for learning</li>
+                <li><strong>Hands-On Tutorials</strong> - Real code examples with step-by-step guides</li>
+                <li><strong>No Setup Required</strong> - Static website hosted on GitHub Pages</li>
+                <li><strong>Always Free</strong> - Open source and always available</li>
+                <li><strong>Responsive</strong> - Learn on desktop, tablet, or mobile</li>
+                <li><strong>Up-to-Date</strong> - Content regularly updated with latest practices</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Learning Hub | <a href="https://github.com">Open Source</a> | Built for learners by learners</p>
+        </footer>
+    </main>
+</body>
+</html>

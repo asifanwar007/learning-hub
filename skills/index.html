@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Generation Skill - Learning Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+            --code-bg: #f6f8fa;
+            --success: #1a7f37;
+            --warning: #9e6a03;
+            --danger: #da3633;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 48px;
+            max-width: 900px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        ul, ol {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            color: #d73a49;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text-primary);
+        }
+
+        .box {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            background: var(--bg-subtle);
+        }
+
+        .box.success {
+            border-color: var(--success);
+            background: #dafbe1;
+        }
+
+        .box.warning {
+            border-color: var(--warning);
+            background: #fff8c5;
+        }
+
+        .box.danger {
+            border-color: var(--danger);
+            background: #ffebe9;
+        }
+
+        .box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 64px;
+            padding-top: 32px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .example-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+        }
+
+        .example-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 16px;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="index.html" class="active">Guide Generator Skill</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>🎯 Guide Generator Skill</h1>
+            <p class="subtitle">Create comprehensive learning guides for ANY topic in seconds</p>
+        </header>
+
+        <h2>How to Use</h2>
+        <p>Request a new guide by saying:</p>
+
+        <div class="example-box">
+            <div class="example-title">Example 1: Just the topic</div>
+            <pre><code>Generate guide for Spring Cloud</code></pre>
+        </div>
+
+        <div class="example-box">
+            <div class="example-title">Example 2: Topic with context</div>
+            <pre><code>Generate guide for Redis caching
+Context: How to use Redis in production for session storage and cache layer,
+debugging redis issues, performance tuning</code></pre>
+        </div>
+
+        <div class="example-box">
+            <div class="example-title">Example 3: Specific focus areas</div>
+            <pre><code>Generate guide for Docker
+Focus: Container orchestration, networking, storage, debugging container issues</code></pre>
+        </div>
+
+        <h2>What You Get</h2>
+        <p>Every guide includes:</p>
+
+        <h3>📋 Executive Summary</h3>
+        <p>Quick overview at the top for fast scanning. Perfect for quick reference before implementing.</p>
+
+        <h3>⚙️ How Different Personas Use It</h3>
+        <ul>
+            <li><strong>Junior Developer:</strong> Basic usage, common patterns, what NOT to do</li>
+            <li><strong>Senior Developer:</strong> Advanced patterns, optimization, debugging, production considerations</li>
+            <li><strong>Architect:</strong> System design thinking, scalability, trade-offs, when to use vs alternatives</li>
+        </ul>
+
+        <h3>❌ Pitfalls & Common Mistakes</h3>
+        <p>Critical mistakes with code examples showing what goes wrong.</p>
+
+        <h3>✅ Pros & Cons</h3>
+        <p>Benefits and limitations with honest assessment of trade-offs.</p>
+
+        <h3>🛠️ Best Practices & Guardrails</h3>
+        <p>Production-ready patterns and safety measures.</p>
+
+        <h3>💡 Real-World Examples</h3>
+        <p>Practical code samples demonstrating proper usage.</p>
+
+        <h3>📚 Learning Resources</h3>
+        <p>Additional materials, related topics, and depth dives.</p>
+
+        <h2>Recent Guides Generated</h2>
+
+        <div class="example-box">
+            <div class="example-title">✅ Available Guides</div>
+            <ul>
+                <li><a href="/spring-boot/retryable.html">@Retryable in Spring Boot</a> - Retry logic and resilience</li>
+                <li><a href="/payments/juspay-architecture.html">JusPay Payment Gateway</a> - Payment processing and debugging</li>
+            </ul>
+        </div>
+
+        <h2>Guide Structure Template</h2>
+        <p>Every guide follows this comprehensive structure:</p>
+
+        <pre><code>1. EXECUTIVE SUMMARY (Quick Reference)
+   - Key facts, scale, when to use
+   - High-level overview (~5 min read)
+
+2. OVERVIEW & CORE CONCEPTS
+   - What is it?
+   - Why does it exist?
+   - Scale/Performance metrics
+
+3. HOW JUNIOR DEVELOPERS USE IT
+   - Basic usage patterns
+   - Common starting mistakes
+   - Simple examples
+
+4. HOW SENIOR DEVELOPERS USE IT
+   - Advanced patterns
+   - Performance optimization
+   - Production considerations
+   - Debugging strategies
+
+5. HOW ARCHITECTS THINK ABOUT IT
+   - System design implications
+   - Trade-offs and trade-offs matrix
+   - When to use vs alternatives
+   - Scaling considerations
+
+6. PROS & BENEFITS
+   - Advantages with real examples
+   - What problems it solves
+
+7. CONS & PITFALLS
+   - Common mistakes with code examples
+   - When NOT to use it
+   - Critical guardrails
+
+8. BEST PRACTICES
+   - Production-ready patterns
+   - Safety measures
+   - Monitoring & observability
+
+9. REAL-WORLD EXAMPLES
+   - Practical implementations
+   - Complete, runnable code
+
+10. LEARNING RESOURCES
+    - Related topics
+    - Depth dives
+    - External references</code></pre>
+
+        <h2>Examples of Requests</h2>
+
+        <h3>Technology Focused</h3>
+        <pre><code>Generate guide for Kubernetes
+Context: Container orchestration, deployment strategies, resource management</code></pre>
+
+        <h3>Architecture Pattern Focused</h3>
+        <pre><code>Generate guide for CQRS Pattern
+Context: Command Query Responsibility Segregation in distributed systems</code></pre>
+
+        <h3>Library/Framework Focused</h3>
+        <pre><code>Generate guide for Hystrix Circuit Breaker
+Context: Resilience patterns, handling cascading failures in microservices</code></pre>
+
+        <h3>Operational Focused</h3>
+        <pre><code>Generate guide for Database Connection Pooling
+Context: HikariCP, performance tuning, deadlocks, resource management</code></pre>
+
+        <h2>What Makes These Guides Different</h2>
+
+        <div class="box success">
+            <strong>✅ Senior Architecture Perspective</strong>
+            <p>Not just "how to use" but "when to use" and "why architects make specific decisions"</p>
+        </div>
+
+        <div class="box success">
+            <strong>✅ Multiple Skill Levels</strong>
+            <p>Junior developers learn basics, seniors learn advanced patterns, architects learn design trade-offs</p>
+        </div>
+
+        <div class="box success">
+            <strong>✅ Production-Ready</strong>
+            <p>Includes debugging strategies, monitoring setup, guardrails, and common failure modes</p>
+        </div>
+
+        <div class="box success">
+            <strong>✅ Quick Scanning</strong>
+            <p>Executive summary at top means you can get key insights in 5 minutes</p>
+        </div>
+
+        <h2>Next Steps</h2>
+        <p>Ready to learn about a topic? Just ask!</p>
+
+        <pre><code>Example:
+"Generate guide for gRPC
+Context: RPC framework for microservices, performance comparison with REST,
+debugging protobuf issues, deployment strategies"</code></pre>
+
+        <footer>
+            <p>This skill generates comprehensive, multi-perspective learning guides for any technical topic.</p>
+            <p style="margin-top: 20px;">Built for learning at scale 💙</p>
+        </footer>
+    </main>
+</body>
+</html>

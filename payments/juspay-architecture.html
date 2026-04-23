@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JusPay Payment Gateway - Architecture Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+            --code-bg: #f6f8fa;
+            --success: #1a7f37;
+            --warning: #9e6a03;
+            --danger: #da3633;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--bg-canvas);
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 48px;
+            max-width: 900px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            margin-bottom: 48px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        ul, ol {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            color: #d73a49;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text-primary);
+        }
+
+        .box {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            background: var(--bg-subtle);
+        }
+
+        .box.success {
+            border-color: var(--success);
+            background: #dafbe1;
+        }
+
+        .box.warning {
+            border-color: var(--warning);
+            background: #fff8c5;
+        }
+
+        .box.danger {
+            border-color: var(--danger);
+            background: #ffebe9;
+        }
+
+        .box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            border: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-subtle);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: var(--bg-subtle);
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 64px;
+            padding-top: 32px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .toc {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+        }
+
+        .toc p {
+            margin: 0 0 12px 0;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .toc ul {
+            margin: 0;
+            list-style: none;
+        }
+
+        .toc li {
+            margin: 6px 0;
+        }
+
+        .toc a {
+            font-size: 14px;
+        }
+
+        .flow-diagram {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 16px;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="index.html">Payment Systems</a></li>
+                <li><a href="juspay-architecture.html" class="active">JusPay</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>JusPay Payment Gateway</h1>
+            <p class="subtitle">Senior architecture guide to JusPay payment integration, debugging, and production resilience</p>
+        </header>
+
+        <div class="toc">
+            <p>Table of Contents</p>
+            <ul>
+                <li><a href="#overview">Overview & Scale</a></li>
+                <li><a href="#architecture">Payment Architecture</a></li>
+                <li><a href="#payment-methods">Supported Payment Methods</a></li>
+                <li><a href="#benefits">Benefits & Pros</a></li>
+                <li><a href="#pitfalls">Pitfalls & Cons</a></li>
+                <li><a href="#debugging">Debugging Strategy</a></li>
+                <li><a href="#webhook">Webhook Architecture</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#guardrails">Guardrails</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">Overview & Scale</h2>
+        <p><strong>JusPay</strong> is a payment orchestration platform that processes <strong>300+ million transactions daily</strong> across 150+ countries, with <strong>$1 trillion annualized payment volume</strong> and <strong>99.999% uptime SLA</strong>.</p>
+
+        <p>It's not just a single payment gateway—it's a platform that aggregates multiple payment processors (Stripe, HDFC, Axis, Razorpay, etc.), enabling merchants to:</p>
+        <ul>
+            <li>Accept multiple payment methods (Cards, UPI, Wallets, Net Banking, PayLater)</li>
+            <li>Route transactions intelligently based on success rates</li>
+            <li>Recover failed transactions automatically</li>
+            <li>Support recurring payments and subscriptions</li>
+            <li>Provide a seamless payment experience across web and mobile</li>
+        </ul>
+
+        <h2 id="architecture">Payment Architecture</h2>
+
+        <h3>High-Level Payment Flow</h3>
+
+        <div class="flow-diagram">
+Customer Browser/App
+        ↓
+JusPay Frontend (HyperCheckout/SDK)
+        ↓ (Encrypted Payment Data)
+JusPay Backend
+        ↓ (Routes to best gateway)
+Payment Gateway (Stripe, HDFC, etc)
+        ↓ (Calls Bank/Network)
+Bank/Card Network
+        ↓ (Authorization Response)
+JusPay Backend
+        ↓ (Webhook fired immediately)
+Your Backend (Webhook Handler)
+        ↓ (Also poll status API)
+Order Fulfillment
+        </div>
+
+        <h3>Key Components</h3>
+
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Responsibility</th>
+                <th>Critical for</th>
+            </tr>
+            <tr>
+                <td><strong>HyperCheckout</strong></td>
+                <td>Pre-built payment page UI. Customer enters payment details here</td>
+                <td>Reducing PCI scope, improving UX</td>
+            </tr>
+            <tr>
+                <td><strong>Express Checkout SDK</strong></td>
+                <td>Mobile SDK for building custom payment flows</td>
+                <td>Mobile app integration, custom UX</td>
+            </tr>
+            <tr>
+                <td><strong>Webhooks</strong></td>
+                <td>Real-time notifications when payment status changes</td>
+                <td>Order fulfillment, inventory management</td>
+            </tr>
+            <tr>
+                <td><strong>Order Status API</strong></td>
+                <td>Query current payment status (polling mechanism)</td>
+                <td>Recovery from webhook failures, reconciliation</td>
+            </tr>
+            <tr>
+                <td><strong>Mandate API</strong></td>
+                <td>Recurring payments, subscriptions, automatic charges</td>
+                <td>SaaS, subscriptions, installments</td>
+            </tr>
+        </table>
+
+        <h2 id="payment-methods">Supported Payment Methods</h2>
+
+        <h3>1. Cards (Debit & Credit)</h3>
+        <ul>
+            <li>Visa, Mastercard, American Express, RuPay</li>
+            <li>3D Secure authentication (mandatory for high-value transactions)</li>
+            <li>Tokenization for faster repeat payments</li>
+        </ul>
+
+        <h3>2. UPI</h3>
+        <ul>
+            <li>Direct UPI Intent flows (fastest)</li>
+            <li>Supported apps: Google Pay, PhonePe, Paytm</li>
+            <li>QR code generation for offline merchants</li>
+        </ul>
+
+        <h3>3. Wallets</h3>
+        <p>Airtel Money, Cred Pay, FreeCharge, Itz Cash, JioMoney, MobiKwik, PayTM</p>
+
+        <h3>4. Net Banking</h3>
+        <p>Direct transfer from customer's bank account</p>
+
+        <h3>5. PayLater</h3>
+        <p>Buy now, pay later options (Flipkart, Amazon Pay)</p>
+
+        <h3>6. COD (Cash on Delivery)</h3>
+        <p>Offline payment collection</p>
+
+        <div class="box success">
+            <strong>✅ Key Insight: Payment Method Routing</strong>
+            <p>JusPay intelligently routes each transaction to the best processor based on success rates, customer profile, and transaction amount. This hidden routing is one of their biggest advantages—they're constantly optimizing which gateway to use.</p>
+        </div>
+
+        <h2 id="benefits">Benefits & Pros</h2>
+
+        <h3>1. Aggregation & Redundancy</h3>
+        <p>If Stripe is down, JusPay automatically fails over to another processor. You don't need to maintain integrations with multiple gateways.</p>
+
+        <pre><code>// You call JusPay once
+juspay.createOrder({amount: 1000, currency: "INR"})
+
+// JusPay internally decides:
+// - Try Stripe first (95% success rate today)
+// - If fails, try HDFC (92% success rate)
+// - If fails, try Razorpay (91% success rate)</code></pre>
+
+        <h3>2. Intelligent Retry & Recovery</h3>
+        <p>Automatic retry logic for failed transactions without your intervention. Significantly improves conversion rates.</p>
+
+        <h3>3. High Uptime SLA</h3>
+        <p>99.999% uptime guarantee means you're not responsible for JusPay outages. Their infrastructure handles scale.</p>
+
+        <h3>4. PCI Compliance Simplified</h3>
+        <p>Using HyperCheckout means payment data never touches your servers. Massive security win.</p>
+
+        <h3>5. Multi-Currency Support</h3>
+        <p>Handle international payments without currency conversion complexity.</p>
+
+        <h3>6. Comprehensive Dashboard</h3>
+        <p>Real-time transaction monitoring, settlement tracking, refund management, all in one place.</p>
+
+        <h3>7. Mobile-First SDKs</h3>
+        <p>Native iOS/Android SDKs with excellent developer experience.</p>
+
+        <h2 id="pitfalls">Pitfalls & Cons</h2>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #1: Processing Payment Twice</strong>
+            <p>Both webhook AND customer redirect arrive almost simultaneously. If you process on both, customer charged twice.</p>
+        </div>
+
+        <pre><code>// 🚨 DANGEROUS - Processes payment twice
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    processOrder(event.orderId);  // Process 1
+}
+
+@PostMapping("/return")
+public void handleReturn(String orderId) {
+    processOrder(orderId);  // Process 2 (customer redirects here too!)
+}</code></pre>
+
+        <pre><code>// ✅ GOOD - Idempotent processing with request ID
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    // Check if already processed using idempotency key
+    if (orderService.isAlreadyProcessed(event.requestId)) {
+        return;
+    }
+    processOrder(event.orderId);
+}
+
+@PostMapping("/return")
+public void handleReturn(String orderId) {
+    // Never process here, just verify and redirect to success page
+    PaymentStatus status = juspay.getOrderStatus(orderId);
+    if (status.success) {
+        redirect("/success?orderId=" + orderId);
+    }
+}</code></pre>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #2: Ignoring Webhook Duplicates</strong>
+            <p>Network glitches can cause JusPay to send the same webhook multiple times. You must handle duplicates.</p>
+        </div>
+
+        <pre><code>// 🚨 BAD - Will process duplicate webhooks
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    order.setStatus("PAID");
+    order.save();  // If webhook arrives twice, order saved twice
+}
+
+// ✅ GOOD - Idempotent operations
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    Order order = orderRepository.findById(event.orderId);
+
+    // Use database uniqueness constraint on webhook ID
+    if (webhookLog.exists(event.webhookId)) {
+        return;  // Already processed
+    }
+
+    order.setStatus("PAID");
+    order.save();
+
+    webhookLog.save(event.webhookId);  // Record processed webhook
+}
+</code></pre>
+
+        <div class="box danger">
+            <strong>❌ Critical Pitfall #3: Only Relying on Webhooks</strong>
+            <p>Webhooks are "eventually consistent"—they may arrive late or not at all. If you ONLY listen to webhooks, you'll miss payments.</p>
+        </div>
+
+        <pre><code>// 🚨 BAD - Missing payments if webhook fails
+// Your webhook handler crashes? Payment not processed!
+
+// ✅ GOOD - Dual approach: webhook + polling
+// 1. Process immediately on webhook (fast path)
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    processPayment(event.orderId);
+}
+
+// 2. Poll for missed webhooks (safety net)
+@Scheduled(fixedDelay = 60000)  // Every 60 seconds
+public void reconcileMissedPayments() {
+    List<PendingOrders> pending = orderRepository.findByStatus("PENDING");
+
+    for (Order order : pending) {
+        PaymentStatus status = juspay.getOrderStatus(order.getId());
+        if (status.success && !order.isPaid()) {
+            processPayment(order.getId());  // Catch missed webhook
+        }
+    }
+}
+</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #4: Not Validating Webhook Authenticity</strong>
+            <p>Anyone can send a fake webhook to your endpoint. JusPay sends Basic Auth credentials—you must validate them.</p>
+        </div>
+
+        <pre><code>// ✅ GOOD - Validate webhook authenticity
+@PostMapping("/webhook")
+public void handleWebhook(
+    HttpServletRequest request,
+    PaymentEvent event
+) {
+    // Extract and verify Basic Auth header
+    String authHeader = request.getHeader("Authorization");
+    String credentials = extractCredentials(authHeader);  // Decode Base64
+
+    if (!credentials.equals(webhookUsername + ":" + webhookPassword)) {
+        throw new UnauthorizedException("Invalid webhook credentials");
+    }
+
+    // Now safe to process
+    processPayment(event.orderId);
+}
+</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #5: Not Handling Failed Transactions Properly</strong>
+            <p>JusPay will mark transactions as FAILED, CANCELLED, PENDING. You must handle all states, not just SUCCESS.</p>
+        </div>
+
+        <table>
+            <tr>
+                <th>Status</th>
+                <th>What it means</th>
+                <th>Action</th>
+            </tr>
+            <tr>
+                <td>SUCCESS</td>
+                <td>Payment confirmed</td>
+                <td>Fulfill order immediately</td>
+            </tr>
+            <tr>
+                <td>PENDING</td>
+                <td>Still processing (typical for UPI)</td>
+                <td>Wait, don't fulfill yet. Check again in 5 min</td>
+            </tr>
+            <tr>
+                <td>FAILED</td>
+                <td>Transaction declined by gateway</td>
+                <td>Show error to customer, allow retry</td>
+            </tr>
+            <tr>
+                <td>CANCELLED</td>
+                <td>Customer abandoned payment</td>
+                <td>Show error, allow restart</td>
+            </tr>
+        </table>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #6: Slow Webhook Handler</strong>
+            <p>If your webhook handler takes >30 seconds, JusPay times out. Keep it fast.</p>
+        </div>
+
+        <pre><code>// 🚨 BAD - Webhook handler that's too slow
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    // Sending email (slow, 5+ seconds)
+    emailService.sendOrderConfirmation(event.orderId);
+
+    // Updating 10 different microservices (slow)
+    inventoryService.reserve(event.orderId);
+    shippingService.createLabel(event.orderId);
+    analyticsService.recordSale(event.orderId);
+
+    // This takes too long! Webhook times out
+}
+
+// ✅ GOOD - Async processing
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    // Quick: mark payment as received
+    orderService.markAsPaid(event.orderId);
+
+    // Async: everything else happens in background
+    eventPublisher.publishPaymentSucceeded(event.orderId);
+    // (Other services consume this event asynchronously)
+
+    return;  // Return immediately to JusPay
+}
+</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Pitfall #7: Not Handling Refunds Properly</strong>
+            <p>Refunds are async—JusPay doesn't confirm immediately. You need to track refund status.</p>
+        </div>
+
+        <h2 id="debugging">Debugging Strategy</h2>
+
+        <p>Payment issues are complex because they involve multiple parties. Here's how to systematically debug:</p>
+
+        <h3>Step 1: Understand the Transaction Flow</h3>
+        <pre><code>// Find the order ID
+String orderId = "ORDER_123";
+
+// Query JusPay API for complete transaction status
+PaymentDetails details = juspay.getOrderStatus(orderId);
+
+// Key fields to check:
+// - status: SUCCESS, PENDING, FAILED, CANCELLED
+// - gateway: Which processor handled it (Stripe, HDFC, etc)
+// - gatewayTransactionId: Reference in external system
+// - errorCode: Why did it fail?
+// - errorMessage: Human-readable error
+// - timestamps: created_at, authorized_at, captured_at
+// - amount: What was charged?
+// - method: Which payment method was used?
+
+System.out.println("Order " + orderId + " is " + details.status);
+System.out.println("Gateway: " + details.gateway);
+System.out.println("Error: " + details.errorMessage);
+System.out.println("Gateway TX ID: " + details.gatewayTransactionId);
+</code></pre>
+
+        <h3>Step 2: Check Webhook Logs</h3>
+        <p>Did JusPay actually send a webhook for this transaction?</p>
+        <ul>
+            <li>Login to JusPay Dashboard → Transactions</li>
+            <li>Search for order ID</li>
+            <li>Check "Webhook Status" or "Notification Status"</li>
+            <li>If webhook failed, JusPay shows: ❌ Failed, Reason: [connection timeout, 500 error, etc]</li>
+        </ul>
+
+        <h3>Step 3: Check Your Webhook Handler Logs</h3>
+        <p>Did your server receive the webhook?</p>
+        <pre><code>// In your webhook handler, always log:
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    logger.info("Webhook received for order {}: status={}, gateway={}, amount={}",
+        event.orderId,
+        event.status,
+        event.gateway,
+        event.amount
+    );
+
+    try {
+        processPayment(event.orderId);
+        logger.info("Successfully processed order {}", event.orderId);
+    } catch (Exception e) {
+        logger.error("Failed to process order {}: {}", event.orderId, e.getMessage());
+        throw e;  // Let JusPay retry
+    }
+}
+</code></pre>
+
+        <h3>Step 4: Common Error Codes & What They Mean</h3>
+        <table>
+            <tr>
+                <th>Error Code</th>
+                <th>Meaning</th>
+                <th>Action</th>
+            </tr>
+            <tr>
+                <td>DECLINED</td>
+                <td>Card/account declined by bank</td>
+                <td>Customer needs to try different card/method</td>
+            </tr>
+            <tr>
+                <td>INSUFFICIENT_FUNDS</td>
+                <td>Customer doesn't have enough balance</td>
+                <td>Customer needs to add funds</td>
+            </tr>
+            <tr>
+                <td>EXPIRED_CARD</td>
+                <td>Card expiry date passed</td>
+                <td>Customer needs updated card</td>
+            </tr>
+            <tr>
+                <td>INVALID_CVV</td>
+                <td>CVV doesn't match</td>
+                <td>Customer enters wrong CVV, retry</td>
+            </tr>
+            <tr>
+                <td>3D_SECURE_FAILED</td>
+                <td>OTP verification failed</td>
+                <td>Customer re-enter OTP</td>
+            </tr>
+            <tr>
+                <td>GATEWAY_TIMEOUT</td>
+                <td>External gateway didn't respond in time</td>
+                <td>JusPay auto-retries, or customer retries</td>
+            </tr>
+            <tr>
+                <td>DUPLICATE_TRANSACTION</td>
+                <td>Same transaction sent twice</td>
+                <td>Check idempotency key, don't retry</td>
+            </tr>
+        </table>
+
+        <h3>Step 5: Production Debugging Checklist</h3>
+        <pre><code>// When a payment issue is reported:
+
+1. Get order ID from customer
+2. Query JusPay: juspay.getOrderStatus(orderId)
+   ├─ Check status (SUCCESS? PENDING? FAILED?)
+   ├─ Check gateway (which processor?)
+   └─ Check errorMessage
+
+3. If SUCCESS but not processed:
+   ├─ Check webhook logs (did we receive it?)
+   ├─ Check your application logs (did handler run?)
+   └─ Check database (is order marked as paid?)
+
+4. If FAILED:
+   ├─ Check errorCode (is it permanent or transient?)
+   ├─ If transient (GATEWAY_TIMEOUT): Customer can retry
+   ├─ If permanent (DECLINED): Customer needs different method
+   └─ If fraud: Check with customer
+
+5. If PENDING (typical for UPI):
+   ├─ Wait 5-10 minutes (UPI can be slow)
+   ├─ Query again: juspay.getOrderStatus(orderId)
+   └─ Check if now SUCCESS
+
+6. Always have:
+   ├─ Trace ID (pass through all requests)
+   ├─ Idempotency Key (prevents duplicates)
+   └─ Full logs (timestamp, user, amount, method)
+</code></pre>
+
+        <h2 id="webhook">Webhook Architecture</h2>
+
+        <h3>Webhook Reliability</h3>
+
+        <div class="box success">
+            <strong>✅ Fact: JusPay Webhooks Are Reliable</strong>
+            <p>JusPay guarantees webhook delivery through automatic retries. If your server is down, they retry for 24-48 hours.</p>
+        </div>
+
+        <h3>However, You Still Need To Implement Polling</h3>
+        <p><strong>Why?</strong> Because "reliable" doesn't mean "100% guaranteed". Network issues, firewall rules, or your server crashes can cause webhooks to be missed. You need a safety net.</p>
+
+        <pre><code>// 1. Fast path: Handle webhook immediately
+@PostMapping("/webhook")
+public void handleWebhook(PaymentEvent event) {
+    orderService.markAsPaid(event.orderId);
+}
+
+// 2. Safety net: Reconciliation job (runs every hour)
+@Scheduled(cron = "0 0 * * * *")  // Every hour
+public void reconcilePayments() {
+    // Find all orders that are marked "PENDING_PAYMENT"
+    List<Order> pending = orderRepository.findByStatus("PENDING_PAYMENT");
+
+    for (Order order : pending) {
+        // Check JusPay: has this been paid?
+        PaymentStatus status = juspay.getOrderStatus(order.getId());
+
+        if (status.isSuccess()) {
+            logger.warn("Found missed webhook for order {}", order.getId());
+            orderService.markAsPaid(order.getId());
+        }
+    }
+}
+</code></pre>
+
+        <h3>Webhook Request Structure</h3>
+        <pre><code>POST /webhook HTTP/1.1
+Host: your-api.example.com
+Authorization: Basic base64(username:password)
+Content-Type: application/json
+
+{
+    "event_name": "payment_succeeded",
+    "order_id": "ORDER_123",
+    "transaction_id": "TXN_456",
+    "status": "SUCCESS",
+    "gateway": "stripe",
+    "gateway_transaction_id": "ch_1J3G3K2eZvKYlo2C",
+    "amount": 50000,      // In paise (lowest currency unit)
+    "currency": "INR",
+    "payment_method": "card",
+    "timestamp": "2026-04-23T15:30:00Z",
+    "error_message": null,
+    "error_code": null
+}
+</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Important: Amount is in paise, not rupees!</strong>
+            <p>₹500 = 50000 paise. Always divide by 100 to get actual amount.</p>
+        </div>
+
+        <h2 id="best-practices">Best Practices</h2>
+
+        <h3>1. Use Request IDs & Trace IDs</h3>
+        <pre><code>// Generate unique ID for every order
+String requestId = UUID.randomUUID().toString();
+
+// Pass it through entire flow
+JuspayOrder order = juspay.createOrder(
+    JuspayOrderRequest.builder()
+        .orderId("ORDER_123")
+        .requestId(requestId)  // Idempotency key
+        .amount(50000)
+        .currency("INR")
+        .metadata(Map.of("traceId", requestId))
+        .build()
+);
+
+// Log with trace ID everywhere
+logger.info("[{}] Creating order for customer", requestId);
+logger.info("[{}] Received webhook payment.success", requestId);
+</code></pre>
+
+        <h3>2. Implement Idempotency Properly</h3>
+        <pre><code>// Use unique constraint on request_id
+@Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = "requestId"))
+public class Order {
+    @Id
+    private String orderId;
+
+    @Column(unique = true)
+    private String requestId;  // Prevent duplicate processing
+
+    // ... other fields
+}
+
+// Check before processing
+public void processPayment(String orderId, String requestId) {
+    Order existing = orderRepository.findByRequestId(requestId);
+
+    if (existing != null) {
+        // Already processed this request
+        return existing;
+    }
+
+    // Process new request
+    Order order = new Order(orderId, requestId);
+    orderRepository.save(order);
+}
+</code></pre>
+
+        <h3>3. Always Have Fallback Payment Methods</h3>
+        <p>If primary payment method fails, offer alternatives:</p>
+        <ul>
+            <li>Card failed? → Try UPI</li>
+            <li>UPI failed? → Try wallet</li>
+            <li>All failed? → Offer PayLater or COD</li>
+        </ul>
+
+        <h3>4. Monitor These Metrics</h3>
+        <pre><code>// Track these in your monitoring system:
+
+- Payment success rate (%), broken down by:
+  ├─ Payment method (cards, UPI, wallet, etc)
+  ├─ Gateway (Stripe, HDFC, Razorpay, etc)
+  └─ Error code (DECLINED, INSUFFICIENT_FUNDS, etc)
+
+- Payment latency (how long until webhook received?)
+  ├─ P50: 50th percentile
+  ├─ P95: 95th percentile
+  └─ P99: 99th percentile
+
+- Webhook delivery success rate
+  ├─ How many webhooks did JusPay send?
+  ├─ How many did we receive?
+  └─ How many did we process?
+
+- Reconciliation gap
+  ├─ Payments in JusPay but not in your system
+  └─ Indicates missed webhooks
+</code></pre>
+
+        <h3>5. Secure Webhook Handling</h3>
+        <pre><code>// 1. Validate all webhooks
+@PostMapping("/webhook")
+public void handleWebhook(HttpServletRequest request, PaymentEvent event) {
+    // Verify Authorization header
+    if (!isValidWebhookAuth(request)) {
+        throw new UnauthorizedException("Invalid webhook");
+    }
+
+    // 2. Validate webhook signature (if available)
+    // Some gateways provide HMAC signatures
+
+    // 3. Prevent replay attacks
+    if (webhookLog.exists(event.webhookId)) {
+        return;  // Already processed
+    }
+
+    // 4. Validate amounts match
+    Order order = orderRepository.findById(event.orderId);
+    if (order.getAmount() != event.amount) {
+        logger.error("Amount mismatch for order {}", event.orderId);
+        throw new IllegalStateException("Amount doesn't match");
+    }
+
+    // 5. Process safely
+    processPayment(event.orderId);
+    webhookLog.record(event.webhookId);
+}
+</code></pre>
+
+        <h2 id="guardrails">Guardrails</h2>
+
+        <div class="box">
+            <strong>Guardrail #1: Always Return HTTP 200 Immediately</strong>
+            <p>Return success to JusPay instantly, then process asynchronously:</p>
+            <pre><code>@PostMapping("/webhook")
+public ResponseEntity<?> handleWebhook(PaymentEvent event) {
+    // Queue for async processing
+    eventQueue.add(event);
+
+    // Return immediately
+    return ResponseEntity.ok().build();
+}</code></pre>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #2: Implement Dual-Write Safety</strong>
+            <p>Process on webhook AND validate on redirect, but don't double-process:</p>
+            <pre><code>// Database prevents duplicate processing
+@Column(unique = true, nullable = false)
+private String webhookId;  // Unique per event</code></pre>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #3: Set Up Payment Failure Alerts</strong>
+            <p>Alert when payment success rate drops:</p>
+            <pre><code>// If success rate < 90%, alert
+double successRate = (successCount / totalCount) * 100;
+if (successRate < 90) {
+    alerts.critical("Payment success rate below 90%");
+}
+</code></pre>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #4: Never Retry Failed Payments Automatically</strong>
+            <p>Only customer-initiated retries. Automatic retries can lead to duplicate charges.</p>
+        </div>
+
+        <div class="box">
+            <strong>Guardrail #5: Log Everything for Audit Trail</strong>
+            <p>Every payment event must be logged with full context for debugging:</p>
+            <pre><code>PaymentAuditLog log = PaymentAuditLog.builder()
+    .orderId(orderId)
+    .requestId(requestId)
+    .action("WEBHOOK_RECEIVED")
+    .status(event.status)
+    .gateway(event.gateway)
+    .amount(event.amount)
+    .timestamp(Instant.now())
+    .userId(order.getUserId())
+    .ipAddress(request.getRemoteAddr())
+    .userAgent(request.getHeader("User-Agent"))
+    .build();
+auditLogRepository.save(log);
+</code></pre>
+        </div>
+
+        <h2>Quick Reference: Common Issues & Fixes</h2>
+
+        <table>
+            <tr>
+                <th>Issue</th>
+                <th>Root Cause</th>
+                <th>Fix</th>
+            </tr>
+            <tr>
+                <td>Payment success in JusPay but order not marked as paid</td>
+                <td>Webhook not received OR webhook processed but failed silently</td>
+                <td>1. Check webhook logs in JusPay dashboard 2. Implement polling reconciliation 3. Add better error handling in webhook</td>
+            </tr>
+            <tr>
+                <td>Customer charged twice</td>
+                <td>Webhook processed + Customer clicked button again + Both triggered order fulfillment</td>
+                <td>Use idempotent order processing with unique request IDs</td>
+            </tr>
+            <tr>
+                <td>Payment marked FAILED but money deducted from account</td>
+                <td>Authorized but not captured. Or processing error. Or gateway issue.</td>
+                <td>Check gateway transaction ID in JusPay. Contact JusPay support with TX ID. Can refund manually.</td>
+            </tr>
+            <tr>
+                <td>UPI payment showing PENDING for 30+ minutes</td>
+                <td>Normal. UPI can be slow. Or customer didn't complete OTP.</td>
+                <td>Wait. Show customer "payment pending" message. Check again after 5 min. After 24h, assume cancelled.</td>
+            </tr>
+            <tr>
+                <td>Webhook timeout errors in JusPay dashboard</td>
+                <td>Your webhook handler takes too long (>30s) or your server is down</td>
+                <td>Return HTTP 200 immediately. Process order asynchronously. Monitor server health.</td>
+            </tr>
+            <tr>
+                <td>Getting "Duplicate transaction" error</td>
+                <td>Sending same request ID twice</td>
+                <td>Don't retry with same request ID. Generate new one for retry.</td>
+            </tr>
+        </table>
+
+        <footer>
+            <p><strong>Key Takeaway:</strong> JusPay abstracts payment complexity, but you still need to handle webhooks carefully, implement idempotency, validate authenticity, and have monitoring. The "dual approach" (webhook + polling) is critical for reliability in payment systems.</p>
+            <p style="margin-top: 20px;">Built for senior architects designing payment systems 💙</p>
+        </footer>
+    </main>
+</body>
+</html>
