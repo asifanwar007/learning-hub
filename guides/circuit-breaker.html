@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <title>Circuit Breaker - Resilience Pattern Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0969da;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border: #d0d7de;
+            --bg-subtle: #f6f8fa;
+            --bg-canvas: #ffffff;
+            --code-bg: #f6f8fa;
+            --success: #1a7f37;
+            --warning: #9e6a03;
+            --danger: #da3633;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; background-color: var(--bg-canvas); color: var(--text-primary); line-height: 1.6; display: flex; }
+        .sidebar { width: 260px; background-color: var(--bg-subtle); border-right: 1px solid var(--border); padding: 24px; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; gap: 8px; align-items: center; margin-bottom: 32px; }
+        .sidebar-nav { list-style: none; }
+        .sidebar-nav li { margin-bottom: 12px; }
+        .sidebar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; padding: 8px 12px; display: block; border-radius: 6px; transition: all 0.2s; }
+        .sidebar-nav a:hover { background-color: var(--bg-canvas); color: var(--primary); }
+        .sidebar-nav a.active { background-color: var(--bg-canvas); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); padding-left: 9px; }
+        main { margin-left: 260px; flex: 1; padding: 48px; max-width: 900px; }
+        header { border-bottom: 1px solid var(--border); padding: 24px 0; margin-bottom: 48px; }
+        h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+        .subtitle { font-size: 16px; color: var(--text-secondary); }
+        h2 { font-size: 24px; font-weight: 700; margin-top: 40px; margin-bottom: 20px; color: var(--text-primary); padding-top: 16px; border-top: 1px solid var(--border); }
+        h2:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+        h3 { font-size: 18px; font-weight: 600; margin-top: 24px; margin-bottom: 12px; }
+        p { margin-bottom: 16px; color: var(--text-secondary); line-height: 1.8; }
+        ul, ol { margin-left: 24px; margin-bottom: 16px; }
+        li { margin-bottom: 10px; color: var(--text-secondary); }
+        strong { color: var(--text-primary); font-weight: 600; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; color: #d73a49; }
+        pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 20px 0; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: var(--text-primary); }
+        .box { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 24px 0; background: var(--bg-subtle); }
+        .box.success { border-color: var(--success); background: #dafbe1; }
+        .box.warning { border-color: var(--warning); background: #fff8c5; }
+        .box.danger { border-color: var(--danger); background: #ffebe9; }
+        .box strong { display: block; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 24px 0; border: 1px solid var(--border); font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        footer { border-top: 1px solid var(--border); margin-top: 64px; padding-top: 32px; font-size: 14px; color: var(--text-secondary); }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .summary-box { background: var(--bg-subtle); border-left: 4px solid var(--primary); border-radius: 4px; padding: 20px; margin: 24px 0; }
+        @media (max-width: 768px) { body { flex-direction: column; } .sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); } main { margin-left: 0; padding: 24px 16px; } h1 { font-size: 28px; } h2 { font-size: 20px; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <a href="/" class="sidebar-logo">
+            <span>📚</span>
+            <span>Learning Hub</span>
+        </a>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/guides/">All Guides</a></li>
+                <li><a href="circuit-breaker.html" class="active">Circuit Breaker</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>⚡ Circuit Breaker</h1>
+            <p class="subtitle">Resilience pattern for preventing cascading failures in distributed systems</p>
+        </header>
+
+        <div class="summary-box">
+            <h3>📋 Executive Summary</h3>
+            <p><strong>What:</strong> Circuit breaker is a design pattern that prevents your application from making requests to a failing service. Like an electrical circuit breaker: stops power flow when there's a problem.</p>
+            <p><strong>Why:</strong> When a service is down/slow, repeated requests waste resources and delay failure detection. Circuit breaker detects failure and fast-fails instead of waiting.</p>
+            <p><strong>Three states:</strong> CLOSED (requests allowed) → OPEN (requests blocked) → HALF_OPEN (testing recovery)</p>
+            <p><strong>When to use:</strong> Any external service call (REST API, database, cache) that could fail</p>
+            <p><strong>Key benefit:</strong> Prevents cascading failures. If payment service is down, you fail fast instead of hanging for 30 seconds.</p>
+            <p><strong>Learning curve:</strong> Easy to understand, critical for production systems</p>
+        </div>
+
+        <h2>Core Concepts</h2>
+
+        <h3>Three States Explained</h3>
+        <table>
+            <tr>
+                <th>State</th>
+                <th>Behavior</th>
+                <th>When It Happens</th>
+            </tr>
+            <tr>
+                <td><strong>CLOSED</strong></td>
+                <td>Requests pass through normally. Failures counted.</td>
+                <td>Service is healthy. This is the normal state.</td>
+            </tr>
+            <tr>
+                <td><strong>OPEN</strong></td>
+                <td>Requests immediately fail (fast-fail). No calls to the service.</td>
+                <td>Failure threshold reached (e.g., 5 failures in 10 seconds)</td>
+            </tr>
+            <tr>
+                <td><strong>HALF_OPEN</strong></td>
+                <td>Limited requests allowed to test if service recovered.</td>
+                <td>After timeout in OPEN state. Testing if service is back up.</td>
+            </tr>
+        </table>
+
+        <h3>State Transitions</h3>
+        <pre><code>CLOSED → OPEN
+When: Failure rate exceeds threshold (e.g., 5 failures in 10 seconds)
+Action: Start blocking requests
+
+OPEN → HALF_OPEN
+When: Timeout reached (e.g., 30 seconds after opening)
+Action: Allow limited requests to test recovery
+
+HALF_OPEN → CLOSED
+When: Test request succeeds
+Action: Circuit closes, requests flow normally again
+
+HALF_OPEN → OPEN
+When: Test request fails
+Action: Circuit opens again, reset timeout counter</code></pre>
+
+        <h2>How Junior Developers Use Circuit Breaker</h2>
+
+        <h3>Basic Circuit Breaker Pattern</h3>
+        <pre><code>// Without Circuit Breaker (BAD 🚨)
+public User getUser(String userId) {
+    try {
+        // If service is down, this waits 30 seconds
+        return userService.callRemoteApi(userId);
+    } catch (Exception e) {
+        throw e;  // Caller has to wait for timeout
+    }
+}
+
+// With Circuit Breaker (GOOD ✅)
+CircuitBreaker breaker = new CircuitBreaker(
+    failureThreshold: 5,  // Open after 5 failures
+    timeout: 30000        // Try recovery after 30s
+);
+
+public User getUser(String userId) {
+    // Immediately fails if circuit is OPEN (no timeout waiting)
+    return breaker.execute(() -> userService.callRemoteApi(userId));
+}</code></pre>
+
+        <h3>Using Resilience4j (Most Popular)</h3>
+        <pre><code>// Maven dependency
+// <dependency>
+//     <groupId>io.github.resilience4j</groupId>
+//     <artifactId>resilience4j-core</artifactId>
+//     <version>2.1.0</version>
+// </dependency>
+
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+
+// Configure circuit breaker
+CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+    .failureRateThreshold(50.0f)  // Open if 50% fail
+    .slowCallRateThreshold(50.0f)  // Or if 50% are slow
+    .slowCallDurationThreshold(Duration.ofSeconds(2))
+    .minimumNumberOfCalls(10)  // Need 10 calls to evaluate
+    .waitDurationInOpenState(Duration.ofSeconds(30))
+    .build();
+
+CircuitBreaker breaker = CircuitBreaker.of("myBreaker", config);
+
+// Use it
+public User getUser(String userId) {
+    return breaker.executeSupplier(() -> userService.getUser(userId));
+}</code></pre>
+
+        <h3>With Fallback</h3>
+        <pre><code>public User getUser(String userId) {
+    try {
+        return breaker.executeSupplier(() -> userService.getUser(userId));
+    } catch (CallNotPermittedException e) {
+        // Circuit is OPEN - use fallback
+        logger.warn("User service is down, returning cached data");
+        return userCache.get(userId);  // Stale but available
+    }
+}</code></pre>
+
+        <div class="box warning">
+            <strong>⚠️ Beginner Mistakes</strong>
+            <ul>
+                <li>🚨 Not setting proper timeout (use 2-5 seconds, not 30)</li>
+                <li>🚨 Failure threshold too low (you want some retries first)</li>
+                <li>🚨 No fallback strategy (circuit opens but you have no Plan B)</li>
+                <li>🚨 Applying circuit breaker to local calls (not needed)</li>
+                <li>🚨 Forgetting to monitor circuit state (you won't know when it opens)</li>
+            </ul>
+        </div>
+
+        <h2>How Senior Developers Use Circuit Breaker</h2>
+
+        <h3>Production Configuration</h3>
+        <pre><code>// Configuration for payment service (critical path)
+CircuitBreakerConfig paymentBreakerConfig = CircuitBreakerConfig.custom()
+    .failureRateThreshold(25.0f)  // Aggressive: 25% failure threshold
+    .slowCallRateThreshold(50.0f)  // Slow calls also count
+    .slowCallDurationThreshold(Duration.ofSeconds(1))  // 1s is slow for payment
+    .minimumNumberOfCalls(20)  // Need 20 calls to be sure
+    .waitDurationInOpenState(Duration.ofSeconds(60))  // Wait 60s before retry
+    .permittedNumberOfCallsInHalfOpenState(5)  // Test with 5 calls
+    .automaticTransitionFromOpenToHalfOpenEnabled(true)  // Auto recovery test
+    .build();
+
+// Configuration for cache service (less critical)
+CircuitBreakerConfig cacheBreakerConfig = CircuitBreakerConfig.custom()
+    .failureRateThreshold(70.0f)  // Lenient: 70% failure threshold
+    .minimumNumberOfCalls(5)
+    .waitDurationInOpenState(Duration.ofSeconds(10))
+    .build();</code></pre>
+
+        <h3>Combining with Retry & Timeout</h3>
+        <pre><code>// Retry first, then circuit breaker, then timeout
+Retry retryPolicy = Retry.of("retry", RetryConfig.custom()
+    .maxAttempts(3)
+    .waitDuration(Duration.ofMillis(500))
+    .build());
+
+Timeout timeout = Timeout.of(Duration.ofSeconds(2));
+
+CircuitBreaker breaker = CircuitBreaker.of("api", CircuitBreakerConfig.custom()
+    .failureRateThreshold(50)
+    .build());
+
+// Decorators applied in order: Timeout → Retry → CircuitBreaker
+Supplier<String> supplier = () -> externalApiCall();
+Supplier<String> decorated = Decorators.ofSupplier(supplier)
+    .withTimeout(timeout)
+    .withRetry(retryPolicy)
+    .withCircuitBreaker(breaker)
+    .decorate();
+
+// Execution order:
+// 1. Timeout: Max 2 seconds total
+// 2. Retry: Up to 3 attempts with 500ms wait between
+// 3. CircuitBreaker: Prevents cascading failure if threshold exceeded
+String result = decorated.get();</code></pre>
+
+        <h3>Monitoring Circuit State</h3>
+        <pre><code>// Listen to state transitions
+breaker.getEventPublisher()
+    .onStateTransition(event -> logger.warn(
+        "Circuit state changed: {} → {}",
+        event.getStateTransition().getFromState(),
+        event.getStateTransition().getToState()
+    ))
+    .onError(event -> metrics.increment("circuitbreaker.errors"))
+    .onSuccess(event -> metrics.increment("circuitbreaker.success"))
+    .onCallNotPermitted(event -> {
+        logger.error("Request rejected - circuit is OPEN");
+        metrics.increment("circuitbreaker.blocked");
+        sendAlert("Payment API circuit breaker is OPEN");
+    });
+
+// Metrics to track
+CircuitBreaker.Metrics metrics = breaker.getMetrics();
+logger.info("Failure rate: {}%", metrics.getFailureRate());
+logger.info("Slow call rate: {}%", metrics.getSlowCallRate());
+logger.info("State: {}", breaker.getState());  // CLOSED, OPEN, HALF_OPEN</code></pre>
+
+        <h2>How Architects Think About Circuit Breaker</h2>
+
+        <h3>When to Use Circuit Breaker</h3>
+        <table>
+            <tr>
+                <th>Scenario</th>
+                <th>Use Circuit Breaker?</th>
+                <th>Why?</th>
+            </tr>
+            <tr>
+                <td>Call to external API (payment, SMS, email)</td>
+                <td>✅ Yes, always</td>
+                <td>Prevents cascading failure, detects outages</td>
+            </tr>
+            <tr>
+                <td>Database queries (local DB)</td>
+                <td>❓ Sometimes</td>
+                <td>Only if database is shared/remote, not for local queries</td>
+            </tr>
+            <tr>
+                <td>Microservice calls (REST/gRPC)</td>
+                <td>✅ Yes, always</td>
+                <td>Other services can fail independently</td>
+            </tr>
+            <tr>
+                <td>Cache queries (Redis, Memcached)</td>
+                <td>✅ Yes</td>
+                <td>Cache can be down, need fallback to DB</td>
+            </tr>
+            <tr>
+                <td>In-memory operations (local HashMap)</td>
+                <td>❌ No</td>
+                <td>These don't fail externally</td>
+            </tr>
+            <tr>
+                <td>Critical path (payment, auth)</td>
+                <td>✅ Yes, with aggressive threshold</td>
+                <td>Faster failure = better UX than hanging</td>
+            </tr>
+        </table>
+
+        <h3>Circuit Breaker vs Retry vs Timeout</h3>
+        <table>
+            <tr>
+                <th>Pattern</th>
+                <th>Purpose</th>
+                <th>Example</th>
+                <th>When to Use</th>
+            </tr>
+            <tr>
+                <td><strong>Retry</strong></td>
+                <td>Handle transient failures</td>
+                <td>Network blip, 1s timeout</td>
+                <td>Before circuit breaker</td>
+            </tr>
+            <tr>
+                <td><strong>Timeout</strong></td>
+                <td>Bound wait time</td>
+                <td>Stop waiting after 2s</td>
+                <td>Prevent thread exhaustion</td>
+            </tr>
+            <tr>
+                <td><strong>Circuit Breaker</strong></td>
+                <td>Prevent cascading failure</td>
+                <td>Stop calling service when it's down</td>
+                <td>After timeout/retry fail repeatedly</td>
+            </tr>
+        </table>
+
+        <h3>Cost Analysis</h3>
+        <ul>
+            <li><strong>CPU:</strong> Negligible. Just counter checks and state transitions.</li>
+            <li><strong>Memory:</strong> Minimal. Stores failure counts and timestamps.</li>
+            <li><strong>Latency:</strong> ~1-2 microseconds per call (circuit breaker check overhead)</li>
+            <li><strong>Benefit:</strong> Prevents 30-second hangs, improves UX, prevents resource exhaustion</li>
+        </ul>
+
+        <h2>Benefits & Pros</h2>
+        <ul>
+            <li>✅ <strong>Prevents cascading failures:</strong> One service down doesn't take down the entire system</li>
+            <li>✅ <strong>Fast failure:</strong> Detects failures immediately, doesn't wait for timeouts</li>
+            <li>✅ <strong>Resource protection:</strong> Prevents thread pool exhaustion from hanging requests</li>
+            <li>✅ <strong>Automatic recovery:</strong> HALF_OPEN state tests if service recovered</li>
+            <li>✅ <strong>Monitorable:</strong> Can alert when circuit opens (service down)</li>
+            <li>✅ <strong>Graceful degradation:</strong> With fallbacks, provides degraded service instead of complete failure</li>
+        </ul>
+
+        <h2>Pitfalls & Cons</h2>
+
+        <div class="box danger">
+            <strong>❌ Distributed Circuit Breaker Problem</strong>
+            <p>Circuit breaker state is local to each instance. Instance A might think service is down while Instance B doesn't. Inconsistent behavior. Solution: Use shared state (Redis) for large deployments.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Cascading Failures with Wrong Config</strong>
+            <p>If threshold is too aggressive, circuit opens prematurely. If too lenient, you get cascading failures anyway. Need to tune carefully for each service.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Thundering Herd Problem</strong>
+            <p>When circuit opens and all requests fast-fail, they might retry simultaneously when circuit closes. Use jitter in retry delays to prevent this.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ False Positives (HALF_OPEN Test Fails)</strong>
+            <p>Circuit tests recovery with a single request. If that request fails, circuit opens again even though service might be up. Use multiple test requests.</p>
+        </div>
+
+        <div class="box warning">
+            <strong>⚠️ Fallback Complexity</strong>
+            <p>Fallbacks need to be thought through. Returning cached data might return stale info. Using a default might hide real problems.</p>
+        </div>
+
+        <h2>Best Practices</h2>
+
+        <h3>1. Always Use Timeout + Circuit Breaker</h3>
+        <p>Never use circuit breaker alone. Timeout prevents hanging, circuit breaker prevents cascading.</p>
+        <pre><code>// Good: Timeout then Circuit Breaker
+Decorators.ofSupplier(supplier)
+    .withTimeout(Duration.ofSeconds(2))
+    .withCircuitBreaker(breaker)
+    .decorate();
+
+// Bad: Circuit Breaker without timeout
+CircuitBreaker.of("api").executeSupplier(supplier);</code></pre>
+
+        <h3>2. Configure Different Thresholds for Different Services</h3>
+        <pre><code>// Payment API: Aggressive (fail fast on payment)
+failureThreshold: 25%, waitDuration: 60s
+
+// Logging API: Lenient (more tolerant)
+failureThreshold: 70%, waitDuration: 10s
+
+// Cache: Very lenient (can fail often)
+failureThreshold: 90%, waitDuration: 5s</code></pre>
+
+        <h3>3. Implement Proper Fallback</h3>
+        <pre><code>public OrderResponse createOrder(Order order) {
+    try {
+        return breaker.executeSupplier(() -> paymentService.process(order));
+    } catch (CallNotPermittedException e) {
+        // Circuit is OPEN
+        // Option 1: Return cached success (optimistic)
+        return cache.getLastSuccess();
+
+        // Option 2: Queue for later (pessimistic)
+        // asyncQueue.add(order);
+        // return OrderResponse.PENDING;
+
+        // Option 3: Fail loudly
+        // throw new PaymentServiceUnavailableException();
+    }
+}</code></pre>
+
+        <h3>4. Monitor Circuit State Changes</h3>
+        <pre><code>breaker.getEventPublisher()
+    .onStateTransition(event -> {
+        logger.error("Circuit {} changed: {} → {}",
+            breaker.getName(),
+            event.getStateTransition().getFromState(),
+            event.getStateTransition().getToState());
+
+        // Alert operations team
+        if (event.getStateTransition().getToState() == State.OPEN) {
+            alerting.sendAlert("Payment API is down!");
+        }
+    });</code></pre>
+
+        <h3>5. Use Jitter in Retry Delays</h3>
+        <pre><code>// Prevents thundering herd when service recovers
+RetryConfig retryConfig = RetryConfig.custom()
+    .maxAttempts(3)
+    .waitDuration(Duration.ofMillis(500))
+    .intervalFunction(IntervalFunction.ofRandomized(
+        500,           // Base: 500ms
+        0.5            // Jitter: ±50%
+    ))
+    .build();</code></pre>
+
+        <h2>Guardrails</h2>
+
+        <h3>1. Never Skip Circuit Breaker for External Calls</h3>
+        <p>Always wrap external API calls, microservice calls, and database calls with circuit breaker + timeout.</p>
+
+        <h3>2. Alert When Circuit Opens</h3>
+        <p>An open circuit means a critical service is down. Operations team needs to know immediately.</p>
+
+        <h3>3. Use Multiple Test Requests in HALF_OPEN</h3>
+        <p>Don't rely on a single test request. Use <code>permittedNumberOfCallsInHalfOpenState</code> to test with multiple requests.</p>
+
+        <h3>4. Track Metrics: Failure Rate, Slow Call Rate, State</h3>
+        <p>Monitor these continuously in production. A creeping failure rate indicates degradation.</p>
+
+        <h3>5. Test Circuit Breaker Behavior</h3>
+        <p>Write tests that simulate service failures and verify circuit breaker opens/closes correctly.</p>
+
+        <h2>Real-World Example: Payment Service Integration</h2>
+        <pre><code>// Configuration for payment API (critical)
+CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+    .failureRateThreshold(30.0f)  // Open after 30% failures
+    .slowCallRateThreshold(50.0f)  // Open if 50% are slow
+    .slowCallDurationThreshold(Duration.ofSeconds(1))
+    .minimumNumberOfCalls(20)
+    .waitDurationInOpenState(Duration.ofSeconds(60))
+    .permittedNumberOfCallsInHalfOpenState(3)  // Test with 3 calls
+    .build();
+
+CircuitBreaker paymentBreaker = CircuitBreaker.of("payment", config);
+
+// Monitoring
+paymentBreaker.getEventPublisher()
+    .onStateTransition(event -> {
+        if (event.getStateTransition().getToState() == State.OPEN) {
+            // CRITICAL: Payment service is down!
+            alerting.sendSevereAlert("Payment API circuit opened");
+            metrics.gauge("payment_api_down", 1);
+        }
+    });
+
+// Usage with timeout and fallback
+@Transactional
+public PaymentResult processPayment(Order order) {
+    try {
+        return Decorators.ofSupplier(() ->
+            paymentApiClient.charge(order.getAmount()))
+            .withTimeout(Duration.ofSeconds(3))
+            .withRetry(Retry.of("payment", RetryConfig.custom()
+                .maxAttempts(2)
+                .waitDuration(Duration.ofMillis(500))
+                .build()))
+            .withCircuitBreaker(paymentBreaker)
+            .decorate()
+            .get();
+    } catch (CallNotPermittedException e) {
+        // Payment API is down (circuit open)
+        logger.error("Payment API unavailable, queuing for retry");
+        paymentQueue.add(order);  // Queue for async retry
+        return PaymentResult.PENDING;
+    } catch (TimeoutException e) {
+        logger.error("Payment API timeout");
+        paymentQueue.add(order);
+        return PaymentResult.PENDING;
+    }
+}</code></pre>
+
+        <footer>
+            <p><strong>Key Takeaway:</strong> Circuit breaker prevents cascading failures by fast-failing when external services are down. Use with timeout and proper fallback strategy. Monitor state changes religiously in production.</p>
+            <p style="margin-top: 20px;">Built for continuous learning 💙</p>
+        </footer>
+    </main>
+</body>
+</html>
