@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@Async & Threading in Spring Boot - Complete Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            background: white;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        aside {
+            width: 250px;
+            background: #f9f9f9;
+            padding: 2rem 1.5rem;
+            border-right: 1px solid #eee;
+            position: sticky;
+            top: 0;
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+
+        aside nav h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        aside nav a {
+            display: block;
+            padding: 0.5rem 0;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            padding-left: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        aside nav a:hover {
+            border-left-color: #667eea;
+            color: #764ba2;
+        }
+
+        main {
+            flex: 1;
+            padding: 3rem;
+        }
+
+        h2 {
+            color: #667eea;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f0f0f0;
+            font-size: 1.8rem;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin: 1.5rem 0 0.75rem 0;
+            font-size: 1.3rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+
+        .executive-summary {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+
+        .executive-summary h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .toc {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin: 0.5rem 0;
+        }
+
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .danger-box {
+            background: #fee;
+            border-left: 4px solid #d32f2f;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .danger-box strong {
+            color: #d32f2f;
+        }
+
+        .warning-box {
+            background: #fef3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .warning-box strong {
+            color: #ff9800;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .success-box strong {
+            color: #2e7d32;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .info-box strong {
+            color: #1565c0;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .comparison-table {
+            margin: 1.5rem 0;
+        }
+
+        .code-label {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .code-label.bad {
+            background: #d32f2f;
+        }
+
+        .code-label.good {
+            background: #4caf50;
+        }
+
+        .perspective {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .perspective h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            border-top: 1px solid #eee;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            aside {
+                width: 100%;
+                max-height: auto;
+                border-right: none;
+                border-bottom: 1px solid #eee;
+                position: static;
+            }
+
+            main {
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside>
+            <nav>
+                <h3>Navigation</h3>
+                <a href="#executive-summary">Executive Summary</a>
+                <a href="#overview">Overview</a>
+                <a href="#junior">Junior Developer Guide</a>
+                <a href="#senior">Senior Developer Guide</a>
+                <a href="#architect">Architecture Thinking</a>
+                <a href="#benefits">Benefits & Pros</a>
+                <a href="#pitfalls">Pitfalls & Cons</a>
+                <a href="#best-practices">Best Practices</a>
+                <a href="#real-world">Real-World Examples</a>
+                <a href="#learning-resources">Learning Resources</a>
+            </nav>
+        </aside>
+
+        <main>
+            <header>
+                <h1>@Async & Threading in Spring Boot</h1>
+                <p class="subtitle">Mastering asynchronous execution for scalable applications</p>
+            </header>
+
+            <div id="executive-summary" class="executive-summary">
+                <h3>Executive Summary</h3>
+                <p><strong>What:</strong> Spring's @Async annotation enables non-blocking method execution via thread pools, allowing your application to handle concurrent requests without blocking the caller.</p>
+                <p><strong>When to use:</strong> Long-running operations (API calls, database queries, email sending, file processing) that don't need to block user responses.</p>
+                <p><strong>Key metrics:</strong> Throughput ↑ 3-10x, Response time ↓ 50-80% for blocking operations, Thread efficiency improved via thread pooling.</p>
+                <p><strong>Best for:</strong> Intermediate developers learning concurrency, senior developers optimizing I/O-bound operations, architects designing scalable systems.</p>
+                <p><strong>Quick fact:</strong> @Async is a wrapper around Java's ExecutorService with Spring's configuration and lifecycle management built-in.</p>
+            </div>
+
+            <div class="toc">
+                <h3>Quick Navigation</h3>
+                <ul>
+                    <li><strong>New to async?</strong> Start with <a href="#overview">Overview</a> → <a href="#junior">Junior Guide</a></li>
+                    <li><strong>Building features?</strong> Jump to <a href="#best-practices">Best Practices</a> → <a href="#real-world">Real-World Examples</a></li>
+                    <li><strong>System design?</strong> See <a href="#architect">Architecture Thinking</a> → <a href="#pitfalls">Pitfalls</a></li>
+                    <li><strong>Production issues?</strong> Check <a href="#pitfalls">Pitfalls & Cons</a> and debugging sections</li>
+                </ul>
+            </div>
+
+            <h2 id="overview">Overview & Core Concepts</h2>
+
+            <h3>What is @Async?</h3>
+            <p>@Async is a Spring Boot annotation that executes a method in a separate thread pool, returning control to the caller immediately without waiting for the method to complete. This is particularly useful for I/O-bound operations where threads spend time waiting rather than computing.</p>
+
+            <p><strong>Why it exists:</strong> In traditional synchronous applications, a thread handles a request from start to finish. If that request makes an external API call that takes 5 seconds, the thread sits idle for those 5 seconds. With @Async, you can offload such work to a separate thread, freeing the original thread to handle other requests.</p>
+
+            <h3>Real-World Analogy</h3>
+            <p>Think of a restaurant:</p>
+            <ul>
+                <li><strong>Synchronous (blocking):</strong> A waiter takes your order, goes to the kitchen, waits for food, and brings it back. They're busy the entire time and can't serve other tables.</li>
+                <li><strong>Asynchronous (@Async):</strong> A waiter takes your order and immediately helps other tables. The kitchen (thread pool) prepares your food and brings it when ready. The waiter stays productive.</li>
+            </ul>
+
+            <h3>How It Works Under the Hood</h3>
+            <pre><code>@Async annotation triggers:
+1. AOP proxy creation (Spring wraps your method)
+2. Thread pool executor intercepts calls
+3. Method runs on separate thread
+4. Control returns immediately to caller
+5. Result available via Future/CompletableFuture/callback</code></pre>
+
+            <h2 id="junior">How Junior Developers Use @Async</h2>
+
+            <h3>Basic Usage Pattern</h3>
+            <p>The simplest way to make a method async:</p>
+
+            <div class="code-label good">GOOD: Simple async method</div>
+            <pre><code>@Service
+public class EmailService {
+
+    @Async
+    public void sendEmail(String to, String subject, String body) {
+        // This runs on a separate thread
+        System.out.println("Sending email on thread: " + Thread.currentThread().getName());
+
+        // Simulating slow operation
+        try {
+            Thread.sleep(5000); // 5 second operation
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Actually send email
+        // mailSender.send(message);
+    }
+}
+
+// In your controller:
+@RestController
+public class UserController {
+    @Autowired
+    private EmailService emailService;
+
+    @PostMapping("/register")
+    public ResponseEntity&lt;String&gt; register(@RequestBody User user) {
+        // Save user
+        // ...
+
+        // Send email asynchronously - returns immediately
+        emailService.sendEmail(user.getEmail(), "Welcome!", "Hello " + user.getName());
+
+        // Response sent to user before email is sent!
+        return ResponseEntity.ok("Registration successful, confirmation email sent");
+    }
+}</code></pre>
+
+            <div class="warning-box">
+                <strong>⚠️ Important:</strong> Don't forget to enable @Async in your Application class:
+            </div>
+
+            <pre><code>@SpringBootApplication
+@EnableAsync  // This is required!
+public class YourApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(YourApplication.class, args);
+    }
+}</code></pre>
+
+            <h3>Getting Results Back with Future</h3>
+            <p>Sometimes you need the result of an async operation:</p>
+
+            <div class="code-label good">GOOD: Async with return value</div>
+            <pre><code>@Service
+public class DataProcessingService {
+
+    @Async
+    public Future&lt;String&gt; processData(String input) {
+        System.out.println("Processing: " + input);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        String result = "Processed: " + input;
+        return AsyncResult.forValue(result);  // Wrap in AsyncResult
+    }
+}
+
+// Usage:
+@RestController
+public class DataController {
+    @Autowired
+    private DataProcessingService service;
+
+    @GetMapping("/process")
+    public String process(@RequestParam String data) throws Exception {
+        Future&lt;String&gt; future = service.processData(data);
+
+        // Do other work while data processes...
+
+        // Get result (blocks here if not ready)
+        String result = future.get(10, TimeUnit.SECONDS); // 10 second timeout
+        return result;
+    }
+}</code></pre>
+
+            <h3>Using CompletableFuture (Better Approach)</h3>
+
+            <div class="code-label good">GOOD: Modern async with CompletableFuture</div>
+            <pre><code>@Service
+public class ReportService {
+
+    @Async
+    public CompletableFuture&lt;Report&gt; generateReport(String reportType) {
+        try {
+            // Simulate report generation
+            Thread.sleep(3000);
+            Report report = new Report(reportType, "Generated at " + LocalDateTime.now());
+            return CompletableFuture.completedFuture(report);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+}
+
+// Usage with composition:
+@GetMapping("/report")
+public CompletableFuture&lt;ResponseEntity&lt;Report&gt;&gt; getReport(@RequestParam String type) {
+    return reportService.generateReport(type)
+        .thenApply(report -> ResponseEntity.ok(report))
+        .exceptionally(ex -> ResponseEntity.status(500).build());
+}</code></pre>
+
+            <h3>Common Beginner Mistakes</h3>
+
+            <div class="danger-box">
+                <strong>❌ BAD: Calling async method from same class</strong>
+                <pre><code>@Service
+public class OrderService {
+
+    @Async
+    public void sendOrderConfirmation(Order order) {
+        // Send email logic
+    }
+
+    public Order createOrder(Order order) {
+        // This WILL NOT be async! @Async only works on method calls through Spring beans
+        sendOrderConfirmation(order);  // Direct call, bypasses proxy
+        return order;
+    }
+}</code></pre>
+                <p><strong>Why it fails:</strong> @Async is implemented via AOP proxy. Direct method calls bypass the proxy, so the async behavior is lost.</p>
+                <p><strong>Fix:</strong> Call from another bean, or inject self and call through it:</p>
+                <pre><code>@Service
+public class OrderService {
+    @Autowired
+    private OrderService self;
+
+    @Async
+    public void sendOrderConfirmation(Order order) { }
+
+    public Order createOrder(Order order) {
+        self.sendOrderConfirmation(order);  // Through proxy - this IS async
+        return order;
+    }
+}</code></pre>
+            </div>
+
+            <div class="danger-box">
+                <strong>❌ BAD: Using @Async with void return type when you need results</strong>
+                <pre><code>@Async
+public void processAndStore(Data data) {
+    // Long operation
+    String result = expensiveComputation(data);
+    // How does caller know if it succeeded or failed?
+}
+
+// Caller has no way to check status
+processAndStore(data);  // Fire and forget, no feedback</code></pre>
+                <p><strong>Fix:</strong> Use Future&lt;Void&gt; or CompletableFuture for error handling:</p>
+                <pre><code>@Async
+public CompletableFuture&lt;Void&gt; processAndStore(Data data) {
+    try {
+        String result = expensiveComputation(data);
+        store(result);
+        return CompletableFuture.completedFuture(null);
+    } catch (Exception e) {
+        return CompletableFuture.failedFuture(e);
+    }
+}</code></pre>
+            </div>
+
+            <div class="danger-box">
+                <strong>❌ BAD: Not handling InterruptedException</strong>
+                <pre><code>@Async
+public void slowOperation() {
+    try {
+        Thread.sleep(5000);  // Slow I/O operation
+    } catch (InterruptedException e) {
+        // Swallowing exception - thread is interrupted but continues
+        System.out.println("Interrupted, oh well...");
+    }
+}</code></pre>
+                <p><strong>Why it matters:</strong> InterruptedException signals the thread should stop. Ignoring it can cause resource leaks.</p>
+                <p><strong>Fix:</strong> Always restore interrupt status:</p>
+                <pre><code>@Async
+public void slowOperation() {
+    try {
+        Thread.sleep(5000);
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // Restore interrupt status
+        return;  // Exit immediately
+    }
+}</code></pre>
+            </div>
+
+            <h3>First 3 Things Every Junior Should Learn</h3>
+            <ol>
+                <li><strong>Enable @EnableAsync</strong> - Without it, @Async won't work at all</li>
+                <li><strong>AOP proxy requirement</strong> - @Async only works when called through Spring beans via their proxy</li>
+                <li><strong>Use CompletableFuture</strong> - Better error handling and composability than raw Future</li>
+            </ol>
+
+            <h2 id="senior">How Senior Developers Use @Async</h2>
+
+            <h3>Thread Pool Configuration for Production</h3>
+            <p>The default thread pool is fine for development but inadequate for production. Configure it:</p>
+
+            <div class="code-label good">GOOD: Production-ready async configuration</div>
+            <pre><code>@Configuration
+@EnableAsync
+public class AsyncConfiguration {
+
+    @Bean(name = "taskExecutor")
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+
+        // Core threads (always active)
+        executor.setCorePoolSize(10);
+
+        // Maximum threads under peak load
+        executor.setMaxPoolSize(50);
+
+        // Queue capacity (tasks waiting if no thread available)
+        executor.setQueueCapacity(500);
+
+        // Thread name prefix for debugging
+        executor.setThreadNamePrefix("async-task-");
+
+        // What to do when queue is full? CallerRunsPolicy executes in caller's thread
+        executor.setRejectedExecutionHandler(new ThreadPoolTaskExecutor.CallerRunsPolicy());
+
+        // Wait for tasks to complete on shutdown (graceful shutdown)
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+
+        executor.initialize();
+        return executor;
+    }
+}</code></pre>
+
+            <h3>Multiple Thread Pools for Different Workloads</h3>
+            <p>Different operations have different needs. Use separate executors:</p>
+
+            <div class="code-label good">GOOD: Multiple configured executors</div>
+            <pre><code>@Configuration
+@EnableAsync
+public class AsyncConfiguration {
+
+    // For fast, non-critical tasks (logging, analytics)
+    @Bean(name = "fastTasks")
+    public TaskExecutor fastTasks() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("fast-task-");
+        executor.initialize();
+        return executor;
+    }
+
+    // For slow, critical operations (emails, reports)
+    @Bean(name = "slowTasks")
+    public TaskExecutor slowTasks() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(20);
+        executor.setMaxPoolSize(100);
+        executor.setQueueCapacity(1000);
+        executor.setThreadNamePrefix("slow-task-");
+        executor.initialize();
+        return executor;
+    }
+
+    // For database-heavy operations
+    @Bean(name = "dbTasks")
+    public TaskExecutor dbTasks() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(15);
+        executor.setMaxPoolSize(30);
+        executor.setQueueCapacity(200);
+        executor.setThreadNamePrefix("db-task-");
+        executor.initialize();
+        return executor;
+    }
+}
+
+// Usage:
+@Service
+public class MyService {
+
+    @Async("fastTasks")
+    public CompletableFuture&lt;Void&gt; logAnalytics(String event) {
+        // Quick, non-critical
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Async("slowTasks")
+    public CompletableFuture&lt;Void&gt; sendEmailWithAttachments(Email email) {
+        // Slow, can use more threads
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Async("dbTasks")
+    public CompletableFuture&lt;Long&gt; runHeavyDatabaseQuery(String query) {
+        // Database intensive
+        return CompletableFuture.completedFuture(0L);
+    }
+}</code></pre>
+
+            <h3>Monitoring and Observability</h3>
+
+            <div class="code-label good">GOOD: Instrumenting async methods for monitoring</div>
+            <pre><code>@Service
+public class MonitoredAsyncService {
+
+    private static final Logger log = LoggerFactory.getLogger(MonitoredAsyncService.class);
+
+    @Autowired
+    private MeterRegistry meterRegistry;
+
+    @Async
+    public CompletableFuture&lt;String&gt; processWithMetrics(String input) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        String threadName = Thread.currentThread().getName();
+
+        log.info("Started async task: {} on thread: {}", input, threadName);
+
+        try {
+            // Simulate work
+            Thread.sleep(1000);
+            String result = "Processed: " + input;
+
+            sample.stop(Timer.builder("async.task.duration")
+                .description("Time taken for async task")
+                .tag("operation", "process")
+                .publishPercentiles(0.5, 0.95, 0.99)
+                .register(meterRegistry));
+
+            meterRegistry.counter("async.task.completed", "operation", "process").increment();
+            log.info("Completed async task: {}", input);
+
+            return CompletableFuture.completedFuture(result);
+        } catch (Exception e) {
+            meterRegistry.counter("async.task.failed", "operation", "process").increment();
+            log.error("Failed async task: {}", input, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+}</code></pre>
+
+            <h3>Handling Exceptions Properly</h3>
+
+            <div class="code-label good">GOOD: Robust exception handling with callbacks</div>
+            <pre><code>@Service
+public class RobustAsyncService {
+
+    private static final Logger log = LoggerFactory.getLogger(RobustAsyncService.class);
+
+    @Async
+    public CompletableFuture&lt;Report&gt; generateReportWithRecovery(String type) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return generateReport(type);
+            } catch (Exception e) {
+                log.error("Failed to generate report: {}", type, e);
+                // Return fallback/partial report
+                return createFallbackReport(type);
+            }
+        }, taskExecutor());  // Specify executor explicitly
+    }
+
+    // Better pattern with explicit error handling:
+    @Async
+    public CompletableFuture&lt;Report&gt; generateReportSafely(String type) {
+        return CompletableFuture.supplyAsync(() -> generateReport(type))
+            .exceptionally(throwable -> {
+                log.error("Report generation failed, using fallback", throwable);
+                return createFallbackReport(type);
+            })
+            .whenComplete((report, exception) -> {
+                if (exception != null) {
+                    notifyAdmins("Report generation failed: " + exception.getMessage());
+                }
+            });
+    }
+
+    @Async
+    public CompletableFuture&lt;Void&gt; chainedAsyncOperations(String data) {
+        return fetchData(data)
+            .thenCompose(this::processData)  // Chain dependent operations
+            .thenCompose(this::storeResults)
+            .exceptionally(ex -> {
+                log.error("Pipeline failed", ex);
+                recordFailure(ex);
+                return null;
+            });
+    }
+
+    private CompletableFuture&lt;String&gt; fetchData(String key) {
+        return CompletableFuture.supplyAsync(() -> "data: " + key);
+    }
+
+    private CompletableFuture&lt;String&gt; processData(String data) {
+        return CompletableFuture.supplyAsync(() -> "processed: " + data);
+    }
+
+    private CompletableFuture&lt;Void&gt; storeResults(String processed) {
+        return CompletableFuture.runAsync(() -> {
+            // Store processed data
+        });
+    }
+}</code></pre>
+
+            <h3>Debugging Async Code</h3>
+
+            <div class="info-box">
+                <strong>📋 Key debugging techniques for @Async:</strong>
+                <ul>
+                    <li><strong>Thread naming:</strong> Always set meaningful thread names (executor.setThreadNamePrefix)</li>
+                    <li><strong>MDC (Mapped Diagnostic Context):</strong> Propagate request context to async threads</li>
+                    <li><strong>Timeouts:</strong> Always specify timeouts with futures to avoid hanging</li>
+                    <li><strong>Logging:</strong> Log thread name, task ID, and timing information</li>
+                </ul>
+            </div>
+
+            <div class="code-label good">GOOD: Debugging with MDC propagation</div>
+            <pre><code>@Service
+public class MDCAsyncService {
+
+    @Autowired
+    private TaskExecutor taskExecutor;
+
+    @Async
+    public CompletableFuture&lt;String&gt; asyncOperationWithMDC(String requestId) {
+        // Capture MDC context from caller's thread
+        Map&lt;String, String&gt; contextMap = MDC.getCopyOfContextMap();
+
+        return CompletableFuture.supplyAsync(() -> {
+            // Restore MDC context in async thread
+            if (contextMap != null) {
+                MDC.setContextMap(contextMap);
+            }
+
+            try {
+                log.info("Async operation starting for requestId: {}", requestId);
+                // Do work
+                Thread.sleep(1000);
+                return "Completed";
+            } finally {
+                MDC.clear();  // Always clear to prevent leaks
+            }
+        }, taskExecutor);
+    }
+}</code></pre>
+
+            <h3>Performance Tuning Guidelines</h3>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Parameter</th>
+                    <th>For I/O Bound</th>
+                    <th>For CPU Bound</th>
+                    <th>How to Tune</th>
+                </tr>
+                <tr>
+                    <td>Core Pool Size</td>
+                    <td>2-4x CPU count</td>
+                    <td>CPU count</td>
+                    <td>Start at expected concurrent tasks</td>
+                </tr>
+                <tr>
+                    <td>Max Pool Size</td>
+                    <td>10-50x CPU count</td>
+                    <td>CPU count + 1</td>
+                    <td>Based on peak load testing</td>
+                </tr>
+                <tr>
+                    <td>Queue Capacity</td>
+                    <td>500-2000</td>
+                    <td>100-200</td>
+                    <td>Monitor queue rejection rate</td>
+                </tr>
+                <tr>
+                    <td>Keep Alive Time</td>
+                    <td>60 seconds</td>
+                    <td>60 seconds</td>
+                    <td>Default usually fine</td>
+                </tr>
+            </table>
+
+            <h2 id="architect">How Architects Think About @Async & Threading</h2>
+
+            <h3>System Design Implications</h3>
+
+            <h3>Throughput vs. Latency Trade-offs</h3>
+            <div class="perspective">
+                <h4>Thread Pool Sizing Impact</h4>
+                <p><strong>More threads:</strong> Higher throughput (more parallel requests), but more context switching overhead and memory usage.</p>
+                <p><strong>Fewer threads:</strong> Lower memory, less overhead, but queue backs up and latency increases.</p>
+                <p><strong>Sweet spot:</strong> Depends on your workload. I/O-bound workloads tolerate many threads; CPU-bound need fewer.</p>
+            </div>
+
+            <h3>Scalability Analysis</h3>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>Without @Async (Blocking)</th>
+                    <th>With @Async (Non-Blocking)</th>
+                    <th>Impact</th>
+                </tr>
+                <tr>
+                    <td>Max Requests/Second</td>
+                    <td>200 (thread limited)</td>
+                    <td>2000+ (executor sized properly)</td>
+                    <td>10x+ throughput increase</td>
+                </tr>
+                <tr>
+                    <td>Memory Usage</td>
+                    <td>~2MB per idle thread</td>
+                    <td>Smaller with dedicated pool</td>
+                    <td>Better resource utilization</td>
+                </tr>
+                <tr>
+                    <td>P99 Latency</td>
+                    <td>30 seconds (queue wait)</td>
+                    <td>2 seconds (no queue wait)</td>
+                    <td>Better predictability</td>
+                </tr>
+                <tr>
+                    <td>GC Pressure</td>
+                    <td>High (many threads)</td>
+                    <td>Lower (fewer threads)</td>
+                    <td>Better stability</td>
+                </tr>
+            </table>
+
+            <h3>Architectural Patterns</h3>
+
+            <div class="info-box">
+                <strong>📋 Layering @Async in your architecture:</strong>
+            </div>
+
+            <pre><code>Web Layer (REST Controllers)
+    ↓ (HTTP request)
+Service Layer (Business Logic)
+    ├─ Synchronous operations
+    └─ @Async methods (offload here)
+        ↓
+    Executor (Thread Pool)
+        ├─ Email Service
+        ├─ Report Generator
+        ├─ Analytics Processor
+        └─ External API caller
+
+Data Access Layer (Repositories)
+    ├─ Fast queries (inline)
+    └─ Slow queries (async if appropriate)
+
+Message Queue (for fire-and-forget)
+    ↓
+Async Consumers</code></pre>
+
+            <p><strong>Key principle:</strong> Use @Async in service layer for offloading from request thread. For truly fire-and-forget, prefer message queues.</p>
+
+            <h3>When to Use vs. When to Use Alternatives</h3>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Scenario</th>
+                    <th>@Async</th>
+                    <th>Message Queue</th>
+                    <th>Recommendation</th>
+                </tr>
+                <tr>
+                    <td>Need response to user?</td>
+                    <td>Yes (Future&lt;&gt;)</td>
+                    <td>No (fire-and-forget)</td>
+                    <td>@Async if need feedback</td>
+                </tr>
+                <tr>
+                    <td>Task must complete?</td>
+                    <td>Best effort</td>
+                    <td>Guaranteed (durable)</td>
+                    <td>Queue if critical</td>
+                </tr>
+                <tr>
+                    <td>Retry failed tasks?</td>
+                    <td>Manual (complex)</td>
+                    <td>Built-in</td>
+                    <td>Queue for auto-retry</td>
+                </tr>
+                <tr>
+                    <td>Distributed execution?</td>
+                    <td>Single JVM only</td>
+                    <td>Across multiple services</td>
+                    <td>Queue for multi-service</td>
+                </tr>
+                <tr>
+                    <td>Setup complexity</td>
+                    <td>Zero (built-in)</td>
+                    <td>Moderate (broker needed)</td>
+                    <td>@Async for quick wins</td>
+                </tr>
+                <tr>
+                    <td>Task isolation</td>
+                    <td>Shared JVM process</td>
+                    <td>Separate service</td>
+                    <td>Queue for isolation</td>
+                </tr>
+            </table>
+
+            <h3>Resource Management at Scale</h3>
+
+            <div class="warning-box">
+                <strong>⚠️ Resource Planning:</strong>
+                <p>Each thread uses ~1-2MB of memory (JVM-dependent). With 100 threads, that's 100-200MB just for stacks. Plan thread counts accordingly.</p>
+                <p>Formula: max_threads × thread_stack_size ≈ total memory for threads</p>
+            </div>
+
+            <h3>Monitoring Architecture</h3>
+
+            <pre><code>Metrics to track:
+├─ Thread Pool Health
+│  ├─ Active thread count (vs. max)
+│  ├─ Queue size (vs. capacity)
+│  ├─ Task submission rate
+│  └─ Rejection rate (tasks rejected due to queue full)
+├─ Task Performance
+│  ├─ Task execution time (p50, p95, p99)
+│  ├─ Task failure rate
+│  └─ Timeout occurrences
+└─ System Health
+   ├─ Deadlock detection
+   ├─ Thread saturation alerts
+   └─ GC impact from threading</code></pre>
+
+            <h2 id="benefits">Benefits & Pros</h2>
+
+            <h3>1. Dramatically Improved Throughput</h3>
+            <p>Instead of one thread per request, you can handle many more concurrent requests with a smaller thread pool handling them asynchronously.</p>
+
+            <div class="code-label good">GOOD: Before and after comparison</div>
+            <pre><code>// BEFORE (Blocking) - 1 thread per request:
+@PostMapping("/send-email")
+public ResponseEntity&lt;&gt; register(User user) {
+    // Save user: 10ms
+    userRepo.save(user);
+
+    // Send email: 2000ms (BLOCKS HERE)
+    emailService.sendEmail(user.getEmail(), "...");
+
+    // Total: ~2010ms per request
+    // With 100 tomcat threads: 100 * 2010ms = 201 seconds to handle 100 requests!
+
+    return ResponseEntity.ok("Success");
+}
+
+// AFTER (@Async) - One thread handles many requests:
+@PostMapping("/send-email")
+public ResponseEntity&lt;&gt; register(User user) {
+    userRepo.save(user);
+
+    // Fire off async - returns immediately (0ms)
+    emailService.sendEmailAsync(user.getEmail(), "...");
+
+    // Total: ~10ms per request
+    // With 100 tomcat threads: 100 * 10ms = 1 second to handle 100 requests!
+
+    return ResponseEntity.ok("Success");
+}</code></pre>
+
+            <h3>2. Better Resource Utilization</h3>
+            <p>Instead of spawning unlimited threads or having many idle threads, @Async uses a managed thread pool optimized for your workload.</p>
+
+            <div class="success-box">
+                <strong>✅ Result:</strong> Fewer threads, lower memory usage, better GC behavior
+            </div>
+
+            <h3>3. Non-Blocking User Experience</h3>
+            <p>Users don't wait for slow operations (API calls, database queries). They get an immediate response, improving perceived performance.</p>
+
+            <h3>4. Easy Integration</h3>
+            <p>Just add @Async annotation and @EnableAsync - no major architectural changes needed.</p>
+
+            <h3>5. Scalability Without Infrastructure</h3>
+            <p>You can handle 10x the load without adding more servers, just optimizing your current infrastructure.</p>
+
+            <h3>6. Thread Pool Flexibility</h3>
+            <p>Can configure different executors for different workloads, giving fine-grained control over resource allocation.</p>
+
+            <h3>7. Testing Friendly</h3>
+            <p>Mock the async service or use callbacks in tests, making testing easier than with raw threading.</p>
+
+            <h2 id="pitfalls">Pitfalls & Cons</h2>
+
+            <h3>Critical Mistakes</h3>
+
+            <div class="danger-box">
+                <strong>❌ DANGER: AOP Proxy Not Created (Most Common)</strong>
+                <pre><code>@Service
+public class OrderService {
+
+    @Async
+    public void notifyUser(Order order) {
+        // ...
+    }
+
+    public void processOrder(Order order) {
+        notifyUser(order);  // WRONG: Direct call bypasses AOP proxy
+                             // @Async is NOT invoked!
+    }
+}
+
+// This is NOT async. The method runs synchronously on the same thread.</code></pre>
+                <p><strong>Why it happens:</strong> @Async is implemented via Spring AOP proxy. Direct method calls within the same class skip the proxy.</p>
+                <p><strong>Fix:</strong> Inject self or use another bean:</p>
+                <pre><code>@Service
+public class OrderService {
+    @Autowired
+    private OrderService self;
+
+    @Async
+    public void notifyUser(Order order) { }
+
+    public void processOrder(Order order) {
+        self.notifyUser(order);  // CORRECT: Through proxy
+    }
+}
+
+// OR: Use different service class
+@Service
+public class NotificationService {
+    @Async
+    public void notifyUser(Order order) { }
+}
+
+@Service
+public class OrderService {
+    @Autowired
+    private NotificationService notificationService;
+
+    public void processOrder(Order order) {
+        notificationService.notifyUser(order);  // CORRECT
+    }
+}</code></pre>
+            </div>
+
+            <div class="danger-box">
+                <strong>❌ DANGER: Thread Pool Exhaustion</strong>
+                <pre><code>// With default thread pool (2-8 threads), you'll hit limits quickly:
+@Async
+public void slowTask() {
+    Thread.sleep(10000);  // 10 second task
+}
+
+// If you submit 20 tasks with only 8 threads available:
+// All 8 threads are busy for 10 seconds
+// 12 tasks are queued waiting
+// New requests pile up in the queue
+// System becomes unresponsive!</code></pre>
+                <p><strong>Symptoms:</strong> Task rejections, timeout exceptions, slow application.</p>
+                <p><strong>Fix:</strong> Properly configure executor:</p>
+                <pre><code>@Configuration
+@EnableAsync
+public class AsyncConfiguration {
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(20);      // Start with 20 threads
+        executor.setMaxPoolSize(100);      // Scale to 100 if needed
+        executor.setQueueCapacity(500);    // Queue up to 500 tasks
+        executor.setRejectedExecutionHandler(
+            new ThreadPoolTaskExecutor.CallerRunsPolicy()  // Fallback: run in caller's thread
+        );
+        executor.initialize();
+        return executor;
+    }
+}</code></pre>
+            </div>
+
+            <div class="danger-box">
+                <strong>❌ DANGER: Ignoring InterruptedException</strong>
+                <pre><code>@Async
+public void riskyTask() {
+    try {
+        Thread.sleep(5000);  // Task interrupted while sleeping
+    } catch (InterruptedException e) {
+        // Silently ignoring - thread thinks it's still active
+        logger.warn("Interrupted");  // Just log and continue?
+    }
+
+    // Task continues running after thread should've stopped!
+}</code></pre>
+                <p><strong>Why it's bad:</strong> InterruptedException is a signal to stop. Ignoring it can cause:</p>
+                <ul>
+                    <li>Resource leaks (connections not closed)</li>
+                    <li>Corrupted data (incomplete writes)</li>
+                    <li>Thread starvation (threads never free up)</li>
+                </ul>
+                <p><strong>Fix:</strong> Respect the interrupt:</p>
+                <pre><code>@Async
+public CompletableFuture&lt;Void&gt; properTask() {
+    try {
+        Thread.sleep(5000);
+        // Do important work
+        return CompletableFuture.completedFuture(null);
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // Restore interrupt status
+        return CompletableFuture.failedFuture(e);  // Stop and return
+    }
+}</code></pre>
+            </div>
+
+            <h3>Common Gotchas</h3>
+
+            <div class="warning-box">
+                <strong>⚠️ WARNING: Fire-and-Forget with void return type</strong>
+                <p>If you use @Async with void return, you have no way to know if the task failed:</p>
+                <pre><code>@Async
+public void sendEmail(Email email) {
+    // What if email sending fails? You'll never know!
+    // Task fails silently
+    emailService.send(email);  // Exception thrown and lost
+}</code></pre>
+                <p><strong>Impact:</strong> Silent failures, support tickets about missing emails, data inconsistency.</p>
+                <p><strong>Better approach:</strong> Use CompletableFuture or implement exception callbacks.</p>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ WARNING: Blocking on Future.get() defeats the purpose</strong>
+                <pre><code>@PostMapping("/process")
+public String process(String data) {
+    CompletableFuture&lt;String&gt; future = asyncService.process(data);
+
+    // YOU ARE BLOCKING HERE!
+    String result = future.get();  // Waits for async operation to complete
+
+    // This negates all benefits of @Async
+    return result;
+}</code></pre>
+                <p><strong>Better:</strong> Return the CompletableFuture to the web layer and let Spring handle the response.</p>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ WARNING: Unbounded queue leads to OutOfMemory</strong>
+                <p>If you don't set QueueCapacity, it's unlimited. Tasks keep piling up:</p>
+                <pre><code>// BAD: Unlimited queue
+executor.setQueueCapacity(Integer.MAX_VALUE);
+
+// Good: Bounded queue with rejection policy
+executor.setQueueCapacity(500);
+executor.setRejectedExecutionHandler(new CallerRunsPolicy());</code></pre>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ WARNING: Different timeout expectations between sync and async</strong>
+                <pre><code>// Synchronous expects everything to complete within request timeout
+@PostMapping(value="/process", produces = MediaType.APPLICATION_JSON_VALUE)
+public ProcessResult process(Data data) {
+    // Request timeout is ~30 seconds (Tomcat default)
+    // Method must return within 30 seconds
+    return blockingService.process(data);  // OK
+}
+
+// Asynchronous must complete before Spring's async timeout
+@PostMapping(value="/process-async")
+public CompletableFuture&lt;ProcessResult&gt; processAsync(Data data) {
+    // Must consider:
+    // 1. Request timeout (~30s)
+    // 2. Async request timeout (spring.mvc.async.request-timeout)
+    // 3. Executor queue time
+    // 4. Task execution time
+    return asyncService.process(data);  // May timeout if too slow!
+}</code></pre>
+            </div>
+
+            <h3>When NOT to Use @Async</h3>
+
+            <ul>
+                <li><strong>Need guaranteed execution:</strong> Use message queues (Kafka, RabbitMQ) if task MUST complete even if app crashes</li>
+                <li><strong>Need distributed execution:</strong> @Async only runs in current JVM; use queues for multi-service pipelines</li>
+                <li><strong>Need retries:</strong> @Async doesn't retry; use message queues for automatic retry logic</li>
+                <li><strong>Need ordering:</strong> @Async has no ordering guarantees; use sequential queue if order matters</li>
+                <li><strong>Task takes too long:</strong> If task takes minutes/hours, use batch jobs or scheduled tasks instead</li>
+            </ul>
+
+            <h2 id="best-practices">Best Practices & Guardrails</h2>
+
+            <h3>1. Enable @EnableAsync Explicitly</h3>
+            <div class="code-label good">GOOD: Explicit configuration</div>
+            <pre><code>@SpringBootApplication
+@EnableAsync
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}</code></pre>
+
+            <h3>2. Always Configure Thread Pool</h3>
+            <div class="code-label good">GOOD: Production-ready executor bean</div>
+            <pre><code>@Configuration
+@EnableAsync
+public class AsyncConfig {
+
+    @Bean(name = "taskExecutor")
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(Runtime.getRuntime().availableProcessors() * 2);
+        executor.setMaxPoolSize(Runtime.getRuntime().availableProcessors() * 4);
+        executor.setQueueCapacity(500);
+        executor.setThreadNamePrefix("async-");
+        executor.setRejectedExecutionHandler(new ThreadPoolTaskExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.initialize();
+        return executor;
+    }
+}</code></pre>
+
+            <h3>3. Use Proper Return Types</h3>
+            <div class="code-label good">GOOD: Use CompletableFuture for error handling</div>
+            <pre><code>// Avoid void - no error feedback
+@Async
+public void badApproach() { }
+
+// Prefer CompletableFuture for proper error handling
+@Async
+public CompletableFuture&lt;String&gt; goodApproach() {
+    return CompletableFuture.supplyAsync(() -> "result");
+}</code></pre>
+
+            <h3>4. Always Handle InterruptedException</h3>
+            <div class="code-label good">GOOD: Proper interrupt handling</div>
+            <pre><code>@Async
+public CompletableFuture&lt;String&gt; asyncTask() {
+    try {
+        Thread.sleep(1000);
+        return CompletableFuture.completedFuture("Done");
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();  // Restore interrupt flag
+        return CompletableFuture.failedFuture(e);  // Propagate failure
+    }
+}</code></pre>
+
+            <h3>5. Set Proper Timeouts</h3>
+            <div class="code-label good">GOOD: Timeout with fallback</div>
+            <pre><code>@GetMapping("/report")
+public CompletableFuture&lt;ResponseEntity&lt;Report&gt;&gt; getReport() {
+    return reportService.generate()
+        .orTimeout(30, TimeUnit.SECONDS)  // Timeout after 30 seconds
+        .exceptionally(ex -> {
+            log.error("Report generation timeout/failed", ex);
+            return new Report("fallback", "Delayed response due to system load");
+        })
+        .thenApply(ResponseEntity::ok);
+}</code></pre>
+
+            <h3>6. Log Comprehensively</h3>
+            <div class="code-label good">GOOD: Detailed logging for debugging</div>
+            <pre><code>@Async
+public CompletableFuture&lt;String&gt; processWithLogging(String input) {
+    String taskId = UUID.randomUUID().toString();
+    String threadName = Thread.currentThread().getName();
+
+    log.info("Task [{}] started on thread [{}] with input [{}]",
+        taskId, threadName, input);
+    long startTime = System.currentTimeMillis();
+
+    try {
+        // Do work
+        Thread.sleep(1000);
+
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("Task [{}] completed successfully in [{}ms]", taskId, duration);
+        return CompletableFuture.completedFuture("Success");
+    } catch (Exception e) {
+        log.error("Task [{}] failed after [{}ms]",
+            taskId, System.currentTimeMillis() - startTime, e);
+        return CompletableFuture.failedFuture(e);
+    }
+}</code></pre>
+
+            <h3>7. Monitor Thread Pool Health</h3>
+            <div class="code-label good">GOOD: Monitoring and health checks</div>
+            <pre><code>@Component
+public class ThreadPoolMetrics {
+
+    @Autowired
+    private TaskExecutor taskExecutor;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
+
+    @PostConstruct
+    public void registerMetrics() {
+        if (taskExecutor instanceof ThreadPoolTaskExecutor) {
+            ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) taskExecutor;
+
+            meterRegistry.gauge("executor.active", executor::getActiveCount);
+            meterRegistry.gauge("executor.queued", executor::getQueueSize);
+            meterRegistry.gauge("executor.pool.size", executor::getPoolSize);
+        }
+    }
+
+    @GetMapping("/health/executor")
+    public Map&lt;String, Object&gt; executorHealth() {
+        if (taskExecutor instanceof ThreadPoolTaskExecutor) {
+            ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) taskExecutor;
+            return Map.of(
+                "activeCount", executor.getActiveCount(),
+                "queueSize", executor.getQueueSize(),
+                "poolSize", executor.getPoolSize(),
+                "corePoolSize", executor.getCorePoolSize(),
+                "maxPoolSize", executor.getMaxPoolSize(),
+                "queueCapacity", executor.getQueueCapacity()
+            );
+        }
+        return Map.of("status", "not a ThreadPoolTaskExecutor");
+    }
+}</code></pre>
+
+            <h3>8. Use Separate Executors for Different Workloads</h3>
+            <div class="code-label good">GOOD: Workload isolation</div>
+            <pre><code>@Configuration
+@EnableAsync
+public class AsyncConfig {
+
+    @Bean(name = "emailExecutor")
+    public TaskExecutor emailExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "ioExecutor")
+    public TaskExecutor ioExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(20);
+        executor.setMaxPoolSize(50);
+        executor.initialize();
+        return executor;
+    }
+}
+
+@Service
+public class MyService {
+    @Async("emailExecutor")
+    public CompletableFuture&lt;Void&gt; sendEmail(Email email) { }
+
+    @Async("ioExecutor")
+    public CompletableFuture&lt;Data&gt; readLargeFile(String path) { }
+}</code></pre>
+
+            <h2 id="real-world">Real-World Examples</h2>
+
+            <h3>Example 1: Email Notification System</h3>
+
+            <div class="code-label good">GOOD: Complete email service</div>
+            <pre><code>// Configuration
+@Configuration
+@EnableAsync
+public class EmailAsyncConfig {
+    @Bean(name = "emailExecutor")
+    public TaskExecutor emailExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("email-");
+        executor.setRejectedExecutionHandler(new ThreadPoolTaskExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
+        executor.initialize();
+        return executor;
+    }
+}
+
+// Service
+@Service
+public class EmailNotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailNotificationService.class);
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private EmailTemplateEngine templateEngine;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
+
+    @Async("emailExecutor")
+    public CompletableFuture&lt;Void&gt; sendWelcomeEmail(User user) {
+        String taskId = UUID.randomUUID().toString();
+        log.info("Sending welcome email to {} [taskId: {}]", user.getEmail(), taskId);
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("Welcome to our platform!");
+            message.setText(templateEngine.renderWelcome(user));
+            message.setFrom("noreply@example.com");
+
+            mailSender.send(message);
+
+            meterRegistry.counter("email.sent", "type", "welcome").increment();
+            log.info("Welcome email sent successfully to {} [taskId: {}]",
+                user.getEmail(), taskId);
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            meterRegistry.counter("email.failed", "type", "welcome").increment();
+            log.error("Failed to send welcome email to {} [taskId: {}]",
+                user.getEmail(), taskId, e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Async("emailExecutor")
+    public CompletableFuture&lt;Void&gt; sendPasswordResetEmail(User user, String resetToken) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("Password Reset Request");
+            message.setText(String.format(
+                "Click here to reset your password: https://example.com/reset?token=%s",
+                resetToken
+            ));
+            message.setFrom("noreply@example.com");
+
+            mailSender.send(message);
+            meterRegistry.counter("email.sent", "type", "password-reset").increment();
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            meterRegistry.counter("email.failed", "type", "password-reset").increment();
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+}
+
+// Controller usage
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private EmailNotificationService emailService;
+
+    @PostMapping("/register")
+    public ResponseEntity&lt;UserDTO&gt; register(@RequestBody RegisterRequest request) {
+        User user = userService.createUser(request);
+
+        // Send email asynchronously - doesn't block response
+        emailService.sendWelcomeEmail(user)
+            .exceptionally(ex -> {
+                log.error("Welcome email failed (will retry later)", ex);
+                return null;  // Don't fail registration if email fails
+            });
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(new UserDTO(user));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity&lt;Void&gt; requestPasswordReset(@RequestParam String email) {
+        User user = userService.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.ok().build();  // Don't reveal if user exists
+        }
+
+        String resetToken = userService.createPasswordResetToken(user);
+
+        emailService.sendPasswordResetEmail(user, resetToken)
+            .exceptionally(ex -> {
+                log.error("Password reset email failed", ex);
+                return null;
+            });
+
+        return ResponseEntity.ok().build();
+    }
+}</code></pre>
+
+            <h3>Example 2: Report Generation with Progress Tracking</h3>
+
+            <div class="code-label good">GOOD: Async report with callbacks</div>
+            <pre><code>// Service
+@Service
+public class ReportGenerationService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReportGenerationService.class);
+
+    @Autowired
+    private ReportRepository reportRepository;
+
+    @Autowired
+    private TaskExecutor reportExecutor;
+
+    @Async("reportExecutor")
+    public CompletableFuture&lt;Report&gt; generateAnalyticsReport(String userId, LocalDate from, LocalDate to) {
+        String reportId = UUID.randomUUID().toString();
+        log.info("Starting report generation [reportId: {}] for user [{}]", reportId, userId);
+
+        return CompletableFuture.supplyAsync(() -> {
+            Report report = new Report();
+            report.setId(reportId);
+            report.setUserId(userId);
+            report.setStatus(ReportStatus.PROCESSING);
+            report.setStartTime(LocalDateTime.now());
+
+            try {
+                // Simulate long operation
+                log.info("Fetching data [reportId: {}]", reportId);
+                List&lt;Data&gt; data = fetchData(userId, from, to);
+
+                log.info("Analyzing data [reportId: {}]", reportId);
+                Map&lt;String, Object&gt; analysis = analyzeData(data);
+
+                log.info("Generating visualizations [reportId: {}]", reportId);
+                List&lt;Chart&gt; charts = generateCharts(analysis);
+
+                report.setData(analysis);
+                report.setCharts(charts);
+                report.setStatus(ReportStatus.COMPLETED);
+                report.setEndTime(LocalDateTime.now());
+
+                reportRepository.save(report);
+
+                log.info("Report generation completed [reportId: {}]", reportId);
+                return report;
+            } catch (Exception e) {
+                log.error("Report generation failed [reportId: {}]", reportId, e);
+                report.setStatus(ReportStatus.FAILED);
+                report.setErrorMessage(e.getMessage());
+                reportRepository.save(report);
+                throw new CompletionException(e);
+            }
+        }, reportExecutor);
+    }
+
+    private List&lt;Data&gt; fetchData(String userId, LocalDate from, LocalDate to) throws InterruptedException {
+        Thread.sleep(2000);  // Simulate database query
+        return List.of(new Data("metric1", 100), new Data("metric2", 200));
+    }
+
+    private Map&lt;String, Object&gt; analyzeData(List&lt;Data&gt; data) throws InterruptedException {
+        Thread.sleep(1500);  // Simulate analysis
+        return Map.of("total", 300);
+    }
+
+    private List&lt;Chart&gt; generateCharts(Map&lt;String, Object&gt; analysis) throws InterruptedException {
+        Thread.sleep(1000);  // Simulate chart generation
+        return List.of(new Chart("Chart 1"));
+    }
+}
+
+// Controller
+@RestController
+@RequestMapping("/api/reports")
+public class ReportController {
+
+    @Autowired
+    private ReportGenerationService reportService;
+
+    @Autowired
+    private ReportRepository reportRepository;
+
+    @PostMapping("/generate")
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; generateReport(
+            @RequestParam String userId,
+            @RequestParam LocalDate from,
+            @RequestParam LocalDate to) {
+
+        CompletableFuture&lt;Report&gt; future = reportService.generateAnalyticsReport(userId, from, to);
+
+        // Get the report ID from the first completed report in the pipeline
+        // In a real system, you might want to return a tracking ID
+        return ResponseEntity.accepted()
+            .body(Map.of("message", "Report generation started"));
+    }
+
+    @GetMapping("/status/{reportId}")
+    public ResponseEntity&lt;ReportDTO&gt; getReportStatus(@PathVariable String reportId) {
+        Report report = reportRepository.findById(reportId)
+            .orElse(null);
+
+        if (report == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(new ReportDTO(report));
+    }
+}</code></pre>
+
+            <h3>Example 3: Batch Data Processing</h3>
+
+            <div class="code-label good">GOOD: Parallel processing of batch items</div>
+            <pre><code>@Service
+public class BatchProcessingService {
+
+    private static final Logger log = LoggerFactory.getLogger(BatchProcessingService.class);
+
+    @Autowired
+    private DataProcessingExecutor executor;
+
+    @Async("batchExecutor")
+    public CompletableFuture&lt;BatchResult&gt; processBatch(List&lt;Item&gt; items) {
+        log.info("Starting batch processing for {} items", items.size());
+
+        int batchSize = 100;
+        List&lt;CompletableFuture&lt;ItemResult&gt;&gt; futures = new ArrayList&lt;&gt;();
+
+        // Process in chunks
+        for (int i = 0; i < items.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, items.size());
+            List&lt;Item&gt; chunk = items.subList(i, end);
+
+            futures.add(processChunk(chunk));
+        }
+
+        // Wait for all chunks to complete
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .thenApply(v -> {
+                List&lt;ItemResult&gt; results = futures.stream()
+                    .map(CompletableFuture::join)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+
+                long successful = results.stream().filter(ItemResult::isSuccess).count();
+                long failed = results.stream().filter(r -> !r.isSuccess()).count();
+
+                log.info("Batch processing completed: {} successful, {} failed",
+                    successful, failed);
+
+                return new BatchResult(successful, failed, results);
+            })
+            .exceptionally(ex -> {
+                log.error("Batch processing failed", ex);
+                throw new CompletionException(ex);
+            });
+    }
+
+    @Async("batchExecutor")
+    private CompletableFuture&lt;List&lt;ItemResult&gt;&gt; processChunk(List&lt;Item&gt; chunk) {
+        return CompletableFuture.supplyAsync(() -> {
+            log.debug("Processing chunk of {} items", chunk.size());
+            return chunk.stream()
+                .map(this::processItem)
+                .collect(Collectors.toList());
+        });
+    }
+
+    private ItemResult processItem(Item item) {
+        try {
+            // Simulate processing
+            Thread.sleep(100);
+            return new ItemResult(item.getId(), true, "Processed");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new ItemResult(item.getId(), false, "Interrupted: " + e.getMessage());
+        }
+    }
+}</code></pre>
+
+            <h2 id="learning-resources">Learning Resources</h2>
+
+            <h3>Official Documentation</h3>
+            <ul>
+                <li><strong>Spring Boot @Async:</strong> https://spring.io/guides/gs/async-method/</li>
+                <li><strong>Spring Framework Reference - Async Processing:</strong> https://docs.spring.io/spring-framework/docs/current/reference/html/integration.html#scheduling</li>
+                <li><strong>CompletableFuture JavaDoc:</strong> https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/CompletableFuture.html</li>
+            </ul>
+
+            <h3>Related Topics to Study</h3>
+            <ul>
+                <li><strong>Message Queues:</strong> When @Async isn't enough - Kafka, RabbitMQ for guaranteed delivery</li>
+                <li><strong>Reactive Programming:</strong> Alternative to @Async - Project Reactor, WebFlux for true non-blocking</li>
+                <li><strong>ThreadLocal & MDC:</strong> Context propagation in async code</li>
+                <li><strong>CompletableFuture Patterns:</strong> Composition, error handling, timeouts</li>
+                <li><strong>Virtual Threads (Java 21+):</strong> Future of async Java - lightweight, easier to reason about</li>
+            </ul>
+
+            <h3>Recommended Articles & Courses</h3>
+            <ul>
+                <li><strong>"The Case for Virtual Threads"</strong> - Loom project explaining future of async Java</li>
+                <li><strong>"Async Patterns in Java"</strong> - Baeldung comprehensive guide</li>
+                <li><strong>"Java Concurrency in Practice"</strong> - Book for deep understanding of threading</li>
+                <li><strong>"Spring Boot Actuator for Monitoring"</strong> - To monitor async task execution</li>
+            </ul>
+
+            <h3>Tools & Libraries</h3>
+            <ul>
+                <li><strong>Spring Boot Actuator:</strong> Exposes metrics for executor monitoring</li>
+                <li><strong>Micrometer:</strong> Metrics collection for ThreadPoolTaskExecutor</li>
+                <li><strong>Sleuth + Zipkin:</strong> Distributed tracing for async operations</li>
+                <li><strong>JProfiler/YourKit:</strong> Thread profiling tools for debugging async code</li>
+            </ul>
+
+            <h3>Quick Decision Tree</h3>
+            <div class="info-box">
+                <strong>📋 When to use what?</strong>
+                <pre><code>Does task need to complete?
+├─ YES, must not fail → Use Message Queue (Kafka, RabbitMQ)
+└─ NO, best effort OK
+    ├─ Need distributed execution?
+    │  ├─ YES → Use Message Queue
+    │  └─ NO → Use @Async
+    │
+    └─ Task duration?
+       ├─ Fast (&lt; 1 second) → Use @Async
+       └─ Slow (minutes/hours) → Use Scheduled Jobs or Batch</code></pre>
+            </div>
+
+            <footer>
+                <p>Last updated: 2026-04-24</p>
+                <p>Built with care for Spring Boot developers</p>
+            </footer>
+        </main>
+    </div>
+</body>
+</html>
